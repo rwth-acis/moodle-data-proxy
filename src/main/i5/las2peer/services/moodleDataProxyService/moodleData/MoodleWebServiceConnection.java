@@ -209,7 +209,7 @@ public class MoodleWebServiceConnection {
 							+ "},"
 								+ "\"verb\": {"
 								+ "\"id\": \"http://example.com/xapi/interacted\","
-								+ "\"display\": {\"en-US\": \"interacted\"}"
+								+ "\"display\": {\"en-US\": \"completed\"}"
 							+ "},"
 							+ "\"object\": {"
 								+ "\"id\": \"http://" + domainName + "/mod/" + itemmodule + "/view.php?id=" + itemid +"\","
