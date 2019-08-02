@@ -129,20 +129,15 @@ public class MoodleWebServiceConnection {
 		JSONArray jsonUserGrades = (JSONArray) jsonGradeReport.get("usergrades");
 		JSONArray jsonUserInfo = new JSONArray(userinfo);
 		
-		//the relevant data for the xapi statement
-		String courseid;
-		String userfullname;
-		String userid;
-		String email = null;
-		String itemname;
-		String itemid;
-		String itemmodule;
-		String gradedatesubmitted = null;
-		String percentageformatted = null;
-		String feedback = null;
 		
-		//for all Grades
+		//for all users
 		for (int i = 0; i < jsonUserGrades.length(); i++) {
+
+			//the relevant user data
+			String courseid;
+			String userfullname;
+			String userid;
+			String email = null;
 		
 			JSONObject jsonUser = (JSONObject) jsonUserGrades.get(i);
 			
@@ -164,8 +159,17 @@ public class MoodleWebServiceConnection {
 			
 			JSONArray jsonGradeItems = (JSONArray) jsonUser.get("gradeitems");
 			
+			//for all gradeitems
 			for(int j = 0; j < jsonGradeItems.length()-1; j++) {
 				
+				//relevant item data
+				String itemname;
+				String itemid;
+				String itemmodule;
+				String gradedatesubmitted = null;
+				String percentageformatted = null;
+				String feedback = null;
+
 				JSONObject jsonItem = (JSONObject) jsonGradeItems.get(j);
 
 				itemname = jsonItem.getString("itemname");
@@ -208,7 +212,7 @@ public class MoodleWebServiceConnection {
 									+ "}"*/
 							+ "},"
 								+ "\"verb\": {"
-								+ "\"id\": \"http://example.com/xapi/interacted\","
+								+ "\"id\": \"http://example.com/xapi/completed\","
 								+ "\"display\": {\"en-US\": \"completed\"}"
 							+ "},"
 							+ "\"object\": {"
