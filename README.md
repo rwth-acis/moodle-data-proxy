@@ -6,7 +6,7 @@ Other related repositories for the bachelor thesis can be found here: [Mentoring
 
 Moodle configuration
 -------------------
-To get Moodle data to MobSOS first a rest api has to be created on Moodle. This can be achieved by creating a Moodle web service under following steps:
+To get Moodle data to MobSOS first a REST API has to be created on Moodle. This is done by creating a Moodle Web-service under following steps:
 - Enable web services under Administration > Site administration > Advanced features
 - Enable REST Protocols under Administration > Site administration > Plugins > Web services > Manage protocols
 - Create a new Web-service Administration > Site administration > Plugins > Web services > External services
@@ -15,7 +15,7 @@ To get Moodle data to MobSOS first a rest api has to be created on Moodle. This 
 
 Service setup
 -------------
-To set up the service configure the property file](etc/i5.las2peer.services.moodleDataProxyService.MoodleDataProxyService.properties) file with your Moodle domain and the corresponding Web-service token.
+To set up the service configure the [property file](etc/i5.las2peer.services.moodleDataProxyService.MoodleDataProxyService.properties) file with your Moodle domain and the corresponding Web-service token.
 ```INI
 moodleDomain = http://exampleDomain
 moodleToken = exampleToken
@@ -48,7 +48,7 @@ Then you can run the image like this:
 docker run -e MOODLE_DOMAIN=moodleDomain -e MOODLE_TOKEN=moodleToken -p 9011:port moodle-data-proxy
 ```
 
-Replace *moodleDomain* with the domain of your Moodle instance and *moodleToken* with the corresponding Web-service token and port with a free port in your network.
+Replace *moodleDomain* with the domain of your Moodle instance and *moodleToken* with the corresponding Web-service token and *port* with a free port in your network.
 
 ### Node Launcher Variables
 
