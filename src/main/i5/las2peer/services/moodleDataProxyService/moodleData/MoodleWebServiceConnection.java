@@ -191,7 +191,7 @@ public class MoodleWebServiceConnection {
           gradedatesubmitted = sdf.format(date) + "Z";
         }
         
-        //get rid of % and shift it so it's 0.XXXX
+        //get rid of % and shift the format to 0.XXXX
         if (jsonItem.get("percentageformatted") != JSONObject.NULL && !jsonItem.getString("percentageformatted").equals("-")) {
           double d = Double.parseDouble(jsonItem.getString("percentageformatted").replaceAll("%", "").trim());
           d = d/100;
