@@ -57,7 +57,7 @@ The las2peer port is fixed at *9011*.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| BOOTSTRAP | unset | Set the --bootstrap option to boostrap with existing nodes. The container will wait for any bootstrap node to be available before continuing. |
+| BOOTSTRAP | unset | Set the --bootstrap option to bootstrap with existing nodes. The container will wait for any bootstrap node to be available before continuing. |
 | SERVICE_PASSPHRASE | Passphrase | Set the second argument in *startService('<service@version>', '<SERVICE_PASSPHRASE>')*. |
 
 *Do not forget to persist you database data*
