@@ -44,7 +44,7 @@ import io.swagger.annotations.SwaggerDefinition;
         description = "A proxy for requesting data from moodle",
         contact = @Contact(
             name = "Philipp Roytburg",
-            email = "philipp.roytburg@rwth-aachen.de")
+            email = "philipp.roytburg@rwth-aachen.de")))
 
 /**
  * 
@@ -95,7 +95,7 @@ public class MoodleDataProxyService extends RESTService {
       userinfo = moodle.core_enrol_get_enrolled_users(courseId);
     } catch (IOException e) {
       e.printStackTrace();
-      return Response.status(500).entity("An error occured with requesting moodle data");
+      return Response.status(500).entity("An error occured with requesting moodle data").build();
     }
     
     ArrayList<String> newstatements = new ArrayList<String>();
@@ -103,7 +103,7 @@ public class MoodleDataProxyService extends RESTService {
       newstatements = moodle.statementGenerator(gradereport, userinfo);
     } catch (JSONException e1) {
       e1.printStackTrace();
-      return Response.status(500).entity("An error occured with generating the xAPI statement");
+      return Response.status(500).entity("An error occured with generating the xAPI statement").build();
     }
     
     // send all statements to mobsos
