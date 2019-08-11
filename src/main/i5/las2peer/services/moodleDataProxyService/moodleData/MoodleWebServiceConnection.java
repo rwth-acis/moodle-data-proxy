@@ -143,6 +143,7 @@ public class MoodleWebServiceConnection {
       String userfullname;
       String userid;
       String email = null;
+      String courseName = null;
     
       JSONObject jsonUser = (JSONObject) jsonUserGrades.get(i);
       
@@ -150,6 +151,7 @@ public class MoodleWebServiceConnection {
       userfullname = jsonUser.getString("userfullname");
       userid = Integer.toString(jsonUser.getInt("userid"));
       
+      //get email
       for (int k = 0 ; k < jsonUserInfo.length(); k++) {
         JSONObject jsonInfo = (JSONObject) jsonUserInfo.get(k);
         if(Integer.toString(jsonInfo.getInt("id")).equals(userid)) {
@@ -161,6 +163,22 @@ public class MoodleWebServiceConnection {
       
       if(email == null) 
         email = userfullname.replace(" ", ".") + userid + "@example.com";
+
+      //get course name
+      for (int k = 0 ; k < jsonUserInfo.length(); k++) {
+        JSONObject jsonInfo = (JSONObject) jsonUserInfo.get(k);
+        if(Integer.toString(jsonInfo.getInt("id")).equals(userid)) {
+          JSONArray jsonEnrolled = (JSONArray) jsonInfo.get("enrolledcourses");
+          for (int l = 0 ; l < jsonUserInfo.length(); l++) {
+            JSONObject jsonEnrolledcourse = (JSONObject) jsonEnrolled.get(l);
+            if(Integer.toString(jsonEnrolledcourse.getInt("id")).equals(courseid)) {
+              courseName = jsonEnrolledcourse.getString("fullname");
+              break;
+            }
+          }
+          
+        }
+      }
       
       JSONArray jsonGradeItems = (JSONArray) jsonUser.get("gradeitems");
       
@@ -219,7 +237,7 @@ public class MoodleWebServiceConnection {
                 + "\"definition\": {"
                   + "\"type\": \"" + domainName + "/course/view.php?id=" + courseid +"\","
                   + "\"name\": {\"en-US\": \"" + itemname + "\"},"
-                  + "\"description\": {\"en-US\": \"This is a test\"}"
+                  + "\"description\": {\"en-US\": \""+ courseName +"\"}"
                 + "},"
                 + "\"objectType\": \"Activity\""
               + "},"
