@@ -10,7 +10,7 @@ To get Moodle data to MobSOS first a REST API has to be created on Moodle. This 
 - Enable web services under Administration > Site administration > Advanced features
 - Enable REST Protocols under Administration > Site administration > Plugins > Web services > Manage protocols
 - Create a new Web-service Administration > Site administration > Plugins > Web services > External services
-- Add at least following functions to the new Web-service: **gradereport_user_get_grade_items** and **core_enrol_get_enrolled_users**
+- Add at least following functions to the new Web-service: **gradereport_user_get_grade_items**, **core_enrol_get_enrolled_users**, **core_course_get_courses** and **mod_quiz_get_quizzes_by_courses**
 - Create a token for the service under Administration > Site Administration > Plugins > Web services > Manage tokens
 
 Service setup
