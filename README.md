@@ -45,10 +45,18 @@ docker build . -t moodle-data-proxy
 Then you can run the image like this:
 
 ```bash
-docker run -e MOODLE_DOMAIN=moodleDomain -e MOODLE_TOKEN=moodleToken -p 9011:port moodle-data-proxy
+docker run -e MOODLE_DOMAIN=moodleDomain -e MOODLE_TOKEN=moodleToken -p port:9011 moodle-data-proxy
 ```
 
 Replace *moodleDomain* with the domain of your Moodle instance and *moodleToken* with the corresponding Web-service token and *port* with a free port in your network.
+
+Sending Moodle data to MobSOS
+-----------------------
+
+To send Moodle data to MobSOS, a RESTful POST request is offered under *serviceAddress*/mc/moodle/*courseId*. 
+
+Therefore, replace *serviceAddress* with your service address and *courseId* with the ID of a Moodle course.
+
 
 ### Node Launcher Variables
 

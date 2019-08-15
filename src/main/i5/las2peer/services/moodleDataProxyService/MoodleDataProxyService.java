@@ -90,9 +90,14 @@ public class MoodleDataProxyService extends RESTService {
   public Response initMoodleConnection(@PathParam("courseId") int courseId) throws ProtocolException, IOException{
     String gradereport = "";
     String userinfo = "";
+    String quizzes = "";
+    String courses = "";
     try { // try getting the moodle data
       gradereport = moodle.gradereport_user_get_grade_items(courseId);
       userinfo = moodle.core_enrol_get_enrolled_users(courseId);
+      quizzes = moodle.mod_quiz_get_quizzes_by_courses(courseId);
+      courses = moodle.core_course_get_courses();
+
     } catch (IOException e) {
       e.printStackTrace();
       return Response.status(500).entity("An error occured with requesting moodle data").build();
@@ -100,7 +105,7 @@ public class MoodleDataProxyService extends RESTService {
     
     ArrayList<String> newstatements = new ArrayList<String>();
     try { // try to create an xAPI statement out of the moodle data
-      newstatements = moodle.statementGenerator(gradereport, userinfo);
+      newstatements = moodle.statementGenerator(gradereport, userinfo, quizzes, courses);
     } catch (JSONException e1) {
       e1.printStackTrace();
       return Response.status(500).entity("An error occured with generating the xAPI statement").build();

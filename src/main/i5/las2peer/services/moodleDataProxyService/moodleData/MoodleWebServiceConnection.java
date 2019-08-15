@@ -120,19 +120,34 @@ public class MoodleWebServiceConnection {
     String result = restRequest("gradereport_user_get_grade_items", urlParameters);
     return result;
   }
+
+  /**
+   * @param courseId This is Id of the course you want to have grades of
+   * @return Returns quiz information for the specified course
+   */
+  public String mod_quiz_get_quizzes_by_courses(int courseId) throws ProtocolException, IOException {
+    
+    String urlParameters = "courseids[0]=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
+    String result = restRequest("mod_quiz_get_quizzes_by_courses", urlParameters);
+    return result;
+  }
+  
   
   /**
    * @param gradereport This is moodle data in json format for the grades
    * @param userinfo This is moodle data in json format for the user information
    * @return Returns an ArrayList of statements
    */
-  public ArrayList<String> statementGenerator(String gradereport, String userinfo) throws JSONException {
+  public ArrayList<String> statementGenerator(String gradereport, String userinfo, String quizzes, String courses) throws JSONException {
     ArrayList<String> statements = new ArrayList<String>();
     
     //json parser
     JSONObject jsonGradeReport = new JSONObject(gradereport);
     JSONArray jsonUserGrades = (JSONArray) jsonGradeReport.get("usergrades");
     JSONArray jsonUserInfo = new JSONArray(userinfo);
+    JSONObject jsonModQuiz = new JSONObject(quizzes);
+    JSONArray jsonQuizzes = (JSONArray) jsonModQuiz.get("quizzes");
+    JSONArray jsonCourses = new JSONArray(courses);
     
     
     //for all users
@@ -144,10 +159,21 @@ public class MoodleWebServiceConnection {
       String userid;
       String email = null;
       String courseName = null;
+      String courseSummary = null;
     
       JSONObject jsonUser = (JSONObject) jsonUserGrades.get(i);
       
       courseid = Integer.toString(jsonUser.getInt("courseid"));
+
+      //course summary
+      for(Object ob: jsonCourses) {
+        JSONObject jsonCourse = (JSONObject) ob;
+        if(Integer.toString(jsonCourse.getInt("id")).equals(courseid) 
+            && jsonCourse.get("summary") != JSONObject.NULL) {
+          courseSummary = jsonCourse.getString("summary").replaceAll("<p>", "").replaceAll("</p>", "");
+        }
+      }
+
       userfullname = jsonUser.getString("userfullname");
       userid = Integer.toString(jsonUser.getInt("userid"));
       
@@ -190,14 +216,24 @@ public class MoodleWebServiceConnection {
         String itemid;
         String itemmodule;
         String gradedatesubmitted = null;
-        String percentageformatted = null;
+        Double percentageformatted = null;
         String feedback = null;
+        String quizSummary = null;
 
         JSONObject jsonItem = (JSONObject) jsonGradeItems.get(j);
 
         itemname = jsonItem.getString("itemname");
         
         itemid = Integer.toString(jsonItem.getInt("id"));
+
+        for(Object ob: jsonQuizzes) {
+          JSONObject jsonQuiz = (JSONObject) ob;
+          if(Integer.toString(jsonQuiz.getInt("course")).equals(courseid) 
+              && Integer.toString(jsonQuiz.getInt("coursemodule")).equals(itemid)
+              && jsonQuiz.get("intro") != JSONObject.NULL) {
+            quizSummary = jsonQuiz.getString("intro");
+          }
+        }
         
         itemmodule = jsonItem.getString("itemmodule");
         
@@ -213,52 +249,60 @@ public class MoodleWebServiceConnection {
         if (jsonItem.get("percentageformatted") != JSONObject.NULL && !jsonItem.getString("percentageformatted").equals("-")) {
           double d = Double.parseDouble(jsonItem.getString("percentageformatted").replaceAll("%", "").trim());
           d = d/100;
-          percentageformatted = Double.toString(d);
+          percentageformatted = d;
         }
-        
+
         //get rid of <p></p>
         if (jsonItem.get("feedback") != JSONObject.NULL)
           feedback = jsonItem.getString("feedback").replaceAll("<p>", "").replaceAll("</p>", "");
         
         // create statement 
         if (percentageformatted != null) {
-          String statement = "{"
-              + "\"actor\": {"
-                + "\"objectType\": \"Agent\","
-                + "\"mbox\": \"mailto:" + email + "\","
-                + "\"name\": \"" + userfullname + "\""
-              + "},"
-                + "\"verb\": {"
-                + "\"id\": \"http://example.com/xapi/completed\","
-                + "\"display\": {\"en-US\": \"completed\"}"
-              + "},"
-              + "\"object\": {"
-                + "\"id\": \"" + domainName + "/mod/" + itemmodule + "/view.php?id=" + itemid +"\","
-                + "\"definition\": {"
-                  + "\"type\": \"" + domainName + "/course/view.php?id=" + courseid +"\","
-                  + "\"name\": {\"en-US\": \"" + itemname + "\"},"
-                  + "\"description\": {\"en-US\": \""+ courseName +"\"}"
-                + "},"
-                + "\"objectType\": \"Activity\""
-              + "},"
-              + "\"result\": {"
-                + "\"completion\": true,"
-                +"\"score\": {"
-                  + "\"scaled\": " + percentageformatted
-                  + "}";
-            if(feedback != null)
-              statement = statement + ","
-                  + "\"response\": \"" + feedback + "\"";
-            
-            statement = statement + "}";
-            
-          if(gradedatesubmitted != null) {
-            statement = statement + ","
-                + "\"timestamp\": \"" + gradedatesubmitted + "\"";
-          }
+
+          JSONObject actor = new JSONObject();
+          actor.put("objectType", "Agent");
+          actor.put("mbox", "mailto:" + email);
+          actor.put("name", userfullname);
           
-          statement = statement + "}";
-          statements.add(statement);
+          
+          JSONObject verb = new JSONObject();
+          verb.put("id", "http://example.com/xapi/completed");
+          JSONObject display = new JSONObject();
+          display.put("en-US", "completed");
+          verb.put("display", display);
+          
+          JSONObject object = new JSONObject();
+          object.put("id", domainName + "/mod/" + itemmodule + "/view.php?id=" + itemid);
+          JSONObject definition = new JSONObject();
+          definition.put("type", domainName + "/course/view.php?id=" + courseid);
+          JSONObject name = new JSONObject();
+          name.put("en-US", itemname);
+          definition.put("name", name);
+          JSONObject description = new JSONObject();
+          if(quizSummary != null) 
+            description.put("en-US", "Course description: "+ courseSummary 
+                + " \n Asignment description: " + quizSummary);
+          else description.put("en-US", "Course description: "+ courseSummary);
+          definition.put("description", description);
+          object.put("definition", definition);
+          object.put("objectType", "Activity");
+          
+          JSONObject result = new JSONObject();
+          result.put("completion", true);
+          if(feedback != null)
+            result.put("response", feedback);
+          JSONObject score = new JSONObject();
+          score.put("scaled", percentageformatted);
+          result.put("score", score);
+          
+          JSONObject statement = new JSONObject();
+          statement.put("actor", actor);
+          statement.put("verb", verb);
+          statement.put("object", object);
+          statement.put("result", result);
+          statement.put("timestamp", gradedatesubmitted);
+
+          statements.add(statement.toString());
         }
       }
       
