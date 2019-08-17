@@ -279,9 +279,9 @@ public class MoodleWebServiceConnection {
           name.put("en-US", itemname);
           definition.put("name", name);
           JSONObject description = new JSONObject();
-          if(quizSummary != null && !quizSummary.equals("")) 
-            description.put("en-US", courseName + " description: "+ courseSummary 
-                + " \n" + itemname +" description: " + quizSummary);
+          if(quizSummary != null) 
+            description.put("en-US", "Course description: "+ courseSummary 
+                + " \n Description: " + quizSummary);
           else description.put("en-US", "Course description: "+ courseSummary);
           definition.put("description", description);
           object.put("definition", definition);

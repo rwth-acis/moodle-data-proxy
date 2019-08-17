@@ -34,6 +34,18 @@ Start
 
 To start the moodle-data-proxy service, follow the [Starting-A-las2peer-Network tutorial](https://github.com/rwth-acis/las2peer-Template-Project/wiki/Starting-A-las2peer-Network) and bootstrap your service to a [mobsos-data-processing service](https://github.com/rwth-acis/mobsos-data-processing/tree/bachelor-thesis-philipp-roytburg).
 
+Sending Moodle data to MobSOS
+-----------------------
+
+To send Moodle data to MobSOS, a RESTful POST request is offered.
+```
+POST <service-address>/mc/moodle/<course-id>.
+```
+
+Therefore, replace *service-address* with your service address and *course-id* with the ID of a Moodle course.
+
+
+
 How to run using Docker
 -------------------
 
@@ -50,14 +62,6 @@ docker run -e MOODLE_DOMAIN=moodleDomain -e MOODLE_TOKEN=moodleToken -p port:901
 
 Replace *moodleDomain* with the domain of your Moodle instance and *moodleToken* with the corresponding Web-service token and *port* with a free port in your network.
 
-Sending Moodle data to MobSOS
------------------------
-
-To send Moodle data to MobSOS, a RESTful POST request is offered under *serviceAddress*/mc/moodle/*courseId*. 
-
-Therefore, replace *serviceAddress* with your service address and *courseId* with the ID of a Moodle course.
-
-
 ### Node Launcher Variables
 
 Set [las2peer node launcher options](https://github.com/rwth-acis/las2peer-Template-Project/wiki/L2pNodeLauncher-Commands#at-start-up) with these variables.
@@ -67,5 +71,3 @@ The las2peer port is fixed at *9011*.
 |----------|---------|-------------|
 | BOOTSTRAP | unset | Set the --bootstrap option to bootstrap with existing nodes. The container will wait for any bootstrap node to be available before continuing. |
 | SERVICE_PASSPHRASE | Passphrase | Set the second argument in *startService('<service@version>', '<SERVICE_PASSPHRASE>')*. |
-
-*Do not forget to persist you database data*
