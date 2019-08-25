@@ -39,7 +39,7 @@ Sending Moodle data to MobSOS
 
 To send Moodle data to MobSOS, a RESTful POST request is offered.
 ```
-POST <service-address>/mc/moodle/<course-id>.
+POST <service-address>/mc/moodle/<course-id>
 ```
 
 Therefore, replace *service-address* with your service address and *course-id* with the ID of a Moodle course.
