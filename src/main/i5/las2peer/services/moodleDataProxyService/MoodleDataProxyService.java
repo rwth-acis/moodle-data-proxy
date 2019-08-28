@@ -11,6 +11,7 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -118,6 +119,36 @@ public class MoodleDataProxyService extends RESTService {
     }
     //return ok message
     return Response.ok().entity("Moodle data was sent to MobSOS.").build();
+  }
+
+  /**
+   * A function that is called by a bot to get the general information of a course
+   *
+   * @param courseId the id of the Moodle course
+   * 
+   * @return a response message with the course information
+   * 
+   */
+  @GET
+  @Path("/course-summary/{courseId}")
+  @Produces(MediaType.TEXT_PLAIN)
+  @ApiResponses(
+      value = { @ApiResponse(
+          code = HttpURLConnection.HTTP_OK,
+          message = "Connection works") })
+  public Response hasSomethingChanged(@PathParam("courseId") String courseId) {
+    String courses = "";
+    String courseSummary = "";
+    try { // try getting the moodle data
+      courses = moodle.core_course_get_courses();
+      courseSummary = moodle.getCourseSummaryById(courseId, courses);
+    } catch (IOException e) {
+      e.printStackTrace();
+      return Response.status(500).entity("An error occured with requesting moodle data").build();
+    }
+
+    
+    return Response.ok().entity(courseSummary).build();
   }
   
 }

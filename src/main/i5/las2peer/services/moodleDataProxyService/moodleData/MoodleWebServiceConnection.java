@@ -131,11 +131,35 @@ public class MoodleWebServiceConnection {
     String result = restRequest("mod_quiz_get_quizzes_by_courses", urlParameters);
     return result;
   }
+
+  /**
+   * @param courseId This is Id of the course you want to the summary of 
+   * @param courses This is moodle data in json format for course information
+   * @return a summary of the course
+   */
+  public String getCourseSummaryById(String courseId, String courses) {
+
+    JSONArray jsonCourses = new JSONArray(courses);
+    String courseSummary = null;
+    //course summary
+      for(Object ob: jsonCourses) {
+        JSONObject jsonCourse = (JSONObject) ob;
+        if(Integer.toString(jsonCourse.getInt("id")).equals(courseId) 
+            && jsonCourse.get("summary") != JSONObject.NULL) {
+          courseSummary = jsonCourse.getString("summary").replaceAll("<.*?>", "");
+        }
+      }
+
+      return courseSummary;
+
+  }
   
   
   /**
    * @param gradereport This is moodle data in json format for the grades
    * @param userinfo This is moodle data in json format for the user information
+   * @param quizzes This is moodle data in json format for quiz information
+   * @param courses This is moodle data in json format for course information
    * @return Returns an ArrayList of statements
    */
   public ArrayList<String> statementGenerator(String gradereport, String userinfo, String quizzes, String courses) throws JSONException {
@@ -147,7 +171,6 @@ public class MoodleWebServiceConnection {
     JSONArray jsonUserInfo = new JSONArray(userinfo);
     JSONObject jsonModQuiz = new JSONObject(quizzes);
     JSONArray jsonQuizzes = (JSONArray) jsonModQuiz.get("quizzes");
-    JSONArray jsonCourses = new JSONArray(courses);
     
     
     //for all users
@@ -165,14 +188,7 @@ public class MoodleWebServiceConnection {
       
       courseid = Integer.toString(jsonUser.getInt("courseid"));
 
-      //course summary
-      for(Object ob: jsonCourses) {
-        JSONObject jsonCourse = (JSONObject) ob;
-        if(Integer.toString(jsonCourse.getInt("id")).equals(courseid) 
-            && jsonCourse.get("summary") != JSONObject.NULL) {
-          courseSummary = jsonCourse.getString("summary").replaceAll("<p>", "").replaceAll("</p>", "");
-        }
-      }
+      courseSummary = getCourseSummaryById(courseid, courses);
 
       userfullname = jsonUser.getString("userfullname");
       userid = Integer.toString(jsonUser.getInt("userid"));
