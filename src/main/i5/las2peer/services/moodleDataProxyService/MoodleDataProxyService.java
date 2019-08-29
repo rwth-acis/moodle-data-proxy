@@ -138,7 +138,7 @@ public class MoodleDataProxyService extends RESTService {
       value = { @ApiResponse(
           code = HttpURLConnection.HTTP_OK,
           message = "Connection works") })
-  public Response hasSomethingChanged(@PathParam("courseId") int courseId) {
+  public Response getCourseSummary(@PathParam("courseId") int courseId) {
     String courses = "";
     String courseSummary = "";
     try { // try getting the moodle data
