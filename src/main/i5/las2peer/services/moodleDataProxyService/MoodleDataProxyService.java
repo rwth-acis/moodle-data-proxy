@@ -60,7 +60,7 @@ public class MoodleDataProxyService extends RESTService {
 
   private MoodleWebServiceConnection moodle;
   
-  private Map<Integer, ArrayList<String>> oldCourseStatements = new HashMap<Integer, ArrayList<String>>();
+  private static Map<Integer, ArrayList<String>> oldCourseStatements = new HashMap<Integer, ArrayList<String>>();
 
   
   /**
@@ -108,7 +108,7 @@ public class MoodleDataProxyService extends RESTService {
     ArrayList<String> newstatements = new ArrayList<String>();
     try { // try to create an xAPI statement out of the moodle data
       newstatements = moodle.statementGenerator(gradereport, userinfo, quizzes, courses);
-      oldCourseStatements.put(courseId, newstatements);
+      MoodleDataProxyService.oldCourseStatements.put(courseId, newstatements);
     } catch (JSONException e1) {
       e1.printStackTrace();
       return Response.status(500).entity("An error occured with generating the xAPI statement").build();
@@ -194,8 +194,8 @@ public class MoodleDataProxyService extends RESTService {
     
     
     ArrayList<String> oldstatements = new ArrayList<String>();
-    //if(oldCourseStatements.get(courseId) != null)
-    oldstatements = oldCourseStatements.get(courseId);
+    if(MoodleDataProxyService.oldCourseStatements.get(courseId) != null)
+      oldstatements = MoodleDataProxyService.oldCourseStatements.get(courseId);
     
     List<String> oldList1 = oldstatements;
     List<String> newList1 = newstatements;
