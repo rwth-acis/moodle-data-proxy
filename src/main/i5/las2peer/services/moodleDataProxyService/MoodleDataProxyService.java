@@ -194,8 +194,8 @@ public class MoodleDataProxyService extends RESTService {
     
     
     ArrayList<String> oldstatements = new ArrayList<String>();
-    if(oldCourseStatements.get(courseId) != null)
-      oldstatements = oldCourseStatements.get(courseId);
+    //if(oldCourseStatements.get(courseId) != null)
+    oldstatements = oldCourseStatements.get(courseId);
     
     List<String> oldList1 = oldstatements;
     List<String> newList1 = newstatements;
