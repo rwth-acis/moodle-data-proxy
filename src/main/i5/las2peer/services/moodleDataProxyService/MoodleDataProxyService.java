@@ -138,17 +138,26 @@ public class MoodleDataProxyService extends RESTService {
       value = { @ApiResponse(
           code = HttpURLConnection.HTTP_OK,
           message = "Connection works") })
-  public Response hasSomethingChanged(@PathParam("courseId") String courseId) {
+  public Response hasSomethingChanged(@PathParam("courseId") int courseId) {
     String courses = "";
     String courseSummary = "";
     try { // try getting the moodle data
       courses = moodle.core_course_get_courses();
-      courseSummary = moodle.getCourseSummaryById(courseId, courses);
+      courseSummary = moodle.getCourseSummaryById(Integer.toString(courseId), courses);
     } catch (IOException e) {
       e.printStackTrace();
       return Response.status(500).entity("An error occured with requesting moodle data").build();
     }
 
+    JSONObject obj = new JSONObject();
+    JSONObject attributes = new JSONObject();
+    obj.put("functionName", "getCourseSummary");
+    obj.put("serviceAlias", "mc");
+    obj.put("uid", Context.getCurrent().getMainAgent().getIdentifier());
+    attributes.put("courseId", courseId);
+    attributes.put("result", courseSummary);
+    obj.put("attributes", attributes);
+    Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_5, obj.toString());
     
     return Response.ok().entity(courseSummary).build();
   }
@@ -226,9 +235,19 @@ public class MoodleDataProxyService extends RESTService {
         resultText += student + " has completed a new assignment!\n";
       }
     }
+
+    JSONObject obj = new JSONObject();
+    JSONObject attributes = new JSONObject();
+    obj.put("functionName", "getChanges");
+    obj.put("serviceAlias", "mc");
+    obj.put("uid", Context.getCurrent().getMainAgent().getIdentifier());
+    attributes.put("courseId", courseId);
+    attributes.put("result", resultText);
+    obj.put("attributes", attributes);
+    Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_5, obj.toString());
       
-      //return ok message
-      return Response.ok().entity(resultText).build();
-    }
+    //return ok message
+    return Response.ok().entity(resultText).build();
+  }
   
 }

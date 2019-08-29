@@ -15,7 +15,7 @@ To get Moodle data to MobSOS first a REST API has to be created on Moodle. This 
 
 Service setup
 -------------
-To set up the service configure the [property file](etc/i5.las2peer.services.moodleDataProxyService.MoodleDataProxyService.properties) file with your Moodle domain and the corresponding Web-service token.
+To set up the service configure the [property](etc/i5.las2peer.services.moodleDataProxyService.MoodleDataProxyService.properties) file with your Moodle domain and the corresponding Web-service token.
 ```INI
 moodleDomain = http://exampleDomain
 moodleToken = exampleToken
