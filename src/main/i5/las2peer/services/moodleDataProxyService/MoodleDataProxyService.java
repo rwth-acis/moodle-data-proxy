@@ -37,45 +37,50 @@ import io.swagger.annotations.SwaggerDefinition;
 
 @Api
 @SwaggerDefinition(
-        info = @Info(
-                title = "Moodle Data Proxy Service",
-                version = "1.0",
-                description = "A proxy for requesting data from moodle",
-                contact = @Contact(
-                        name = "Philipp Roytburg",
-                        email = "philipp.roytburg@rwth-aachen.de")))
+    info = @Info(
+        title = "Moodle Data Proxy Service",
+        version = "1.0",
+        description = "A proxy for requesting data from moodle",
+        contact = @Contact(
+            name = "Philipp Roytburg",
+            email = "philipp.roytburg@rwth-aachen.de")))
 
 /**
- *
+ * 
  * This service is for requesting moodle data and creating corresponding xAPI statement. It sends REST requests to moodle  
  * on basis of implemented functions in MoodleWebServiceConnection.
- *
+ * 
  */
 @ManualDeployment
 @ServicePath("mc")
 public class MoodleDataProxyService extends RESTService {
-
+  
   private String moodleDomain;
   private String moodleToken;
+
   private MoodleWebServiceConnection moodle;
+  
   private static Map<Integer, ArrayList<String>> oldCourseStatements = new HashMap<Integer, ArrayList<String>>();
 
+  
   /**
-   *
+   * 
    * Constructor of the Service. Loads the database values from a property file and initiates values for a moodle connection.
-   *
+   * 
    */
   public MoodleDataProxyService() {
     setFieldValues(); // This sets the values of the configuration file
     moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
   }
-
+  
+  
   /**
-   * A function that is called by the user to send processed moodle to a mobsos data processing instance.
+   * A function that is called by the user to send processed moodle to a mobsos data processing instance. 
    *
    * @param courseId an integer indicating the id of a moodle course
+   * 
    * @return a response message if everything went ok
-   *
+   * 
    */
   @POST
   @Path("/moodle-data/{courseId}")
@@ -252,6 +257,12 @@ public class MoodleDataProxyService extends RESTService {
 
     jsonObject.put("attributes", attributes);
 
+    Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_5, jsonObject.toString());
+
+    initiateMoodleConnection(courseId);
+
+    //return ok message
     return jsonObject;
   }
+
 }
