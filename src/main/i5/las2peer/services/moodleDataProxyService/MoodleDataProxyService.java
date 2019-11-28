@@ -233,6 +233,10 @@ public class MoodleDataProxyService extends RESTService {
     return Response.ok().entity(resultText).build();
   }
 
+  /*
+   * This function creates json object from the parameters
+   * functionName, agentIdentifier, courseId and resultText
+   */
   private JSONObject createJSONObject(String functionName, String agentIdentifier, int courseId, String resultText){
 
     JSONObject jsonObject = new JSONObject();
