@@ -206,7 +206,10 @@ public class MoodleWebServiceConnection {
 
     return statements;
   }
-
+    /*
+     * Splitted previously implemented statementGenerator
+     * This function retrieves the email of the student
+     */
   private String statementGeneratorGetEmail(JSONArray jsonUserInfo, String userId){
     String email = "";
     for (int k = 0 ; k < jsonUserInfo.length(); k++) {
@@ -220,6 +223,10 @@ public class MoodleWebServiceConnection {
     return email;
   }
 
+    /*
+     * Splitted previously implemented statementGenerator
+     * This function retrieves the course names of the student
+     */
   private String statementGeneratorGetCourseName(JSONArray jsonUserInfo, String userId, String courseId){
     String courseName = null;
 
@@ -240,6 +247,10 @@ public class MoodleWebServiceConnection {
     return courseName;
   }
 
+  /*
+   * Splitted previously implemented statementGenerator
+   * This function retrieves the summary of quizzes
+   */
   private String statementGeneratorGetQuizzes(JSONArray jsonQuizzes, String courseId, String itemId){
     String quizSummary = null;
     for(Object ob: jsonQuizzes) {
@@ -253,6 +264,10 @@ public class MoodleWebServiceConnection {
     return quizSummary;
   }
 
+  /*
+   * Splitted previously implemented statementGenerator
+   * This function takes into account the grade items
+   */
   private ArrayList<String> statementGeneratorGetGrades(int index, JSONArray jsonGradeItems, JSONArray jsonQuizzes,
                                                         String courseId, String userFullName, String email,
                                                         String courseSummary, ArrayList<String> statements) {
@@ -302,6 +317,9 @@ public class MoodleWebServiceConnection {
     return statements;
   }
 
+  /*
+   * Creating xAPI statements by taking into account the necessary attributes for actor, verb, object and result
+   */
   private ArrayList<String> createXAPIstatements(Double percentageFormatted, String email, String userFullName,
                                                  String itemModule, String itemId, String courseId, String itemName, String quizSummary,
                                                  String courseSummary, String feedback, String gradeDateSubmitted, ArrayList<String> statements) {
