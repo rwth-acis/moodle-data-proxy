@@ -1,11 +1,12 @@
 package i5.las2peer.services.moodleDataProxyService.moodleData;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.reflect.Array;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserData;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserGradeItem;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
@@ -13,15 +14,13 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements.xAPIStatements;
 
 public class MoodleWebServiceConnection {
   private static String token = null;
   private static String domainName = null;
   private static String restFormat ="&moodlewsrestformat=json";
+
 
   /**
    */
@@ -168,8 +167,13 @@ public class MoodleWebServiceConnection {
     String email;
     String courseName;
     String courseSummary;
+    MoodleUserData moodleUserData;
+    MoodleUserGradeItem moodleUserGradeItem;
 
     for (int i = 0; i < jsonUserGrades.length(); i++) {
+
+      moodleUserData = new MoodleUserData();
+      moodleUserGradeItem = new MoodleUserGradeItem();
 
       courseId = null;
       userFullName = null;
@@ -181,25 +185,31 @@ public class MoodleWebServiceConnection {
       JSONObject jsonUser = (JSONObject) jsonUserGrades.get(i);
 
       courseId = Integer.toString(jsonUser.getInt("courseid"));
+      moodleUserData.setCourseId(courseId);
 
       courseSummary = getCourseSummaryById(courseId, courses);
+      moodleUserData.setCourseSummary(courseSummary);
 
       userFullName = jsonUser.getString("userfullname");
-      userId = Integer.toString(jsonUser.getInt("userid"));
+      moodleUserData.setUserFullName(userFullName);
 
+      userId = Integer.toString(jsonUser.getInt("userid"));
+      moodleUserData.setUserId(userId);
       //get email
       email = statementGeneratorGetEmail(jsonUserInfo, userId);
       if(email == null) {
         email = userFullName.replace(" ", ".") + userId + "@example.com";
       }
+      moodleUserData.setEmail(email);
 
       //get course name
       courseName = statementGeneratorGetCourseName(jsonUserInfo, userId, courseId);
+      moodleUserData.setCourseName(courseName);
 
       JSONArray jsonGradeItems = (JSONArray) jsonUser.get("gradeitems");
 
       for(int j = 0; j < jsonGradeItems.length()-1; j++) {
-        statements = statementGeneratorGetGrades(j, jsonGradeItems, jsonQuizzes, courseId, userFullName, email, courseSummary, statements);
+        statements = statementGeneratorGetGrades(j, jsonGradeItems, jsonQuizzes, moodleUserData, statements, moodleUserGradeItem);
       } // end of loop jsonGradeItems
 
     } // end of loop jsonUserGrades
@@ -269,8 +279,7 @@ public class MoodleWebServiceConnection {
    * This function takes into account the grade items
    */
   private ArrayList<String> statementGeneratorGetGrades(int index, JSONArray jsonGradeItems, JSONArray jsonQuizzes,
-                                                        String courseId, String userFullName, String email,
-                                                        String courseSummary, ArrayList<String> statements) {
+                                                        MoodleUserData moodleUserData, ArrayList<String> statements, MoodleUserGradeItem moodleUserGradeItem) {
     String itemName = null;
     String itemId = null;
     String itemModule = null;
@@ -282,20 +291,25 @@ public class MoodleWebServiceConnection {
     JSONObject jsonItem = (JSONObject) jsonGradeItems.get(index);
 
     itemName = !jsonItem.isNull("itemname") ? jsonItem.getString("itemname") : "";
+    moodleUserGradeItem.setItemName(itemName);
 
     itemId = Integer.toString(jsonItem.getInt("id"));
+    moodleUserGradeItem.setItemId(itemId);
 
-    quizSummary = statementGeneratorGetQuizzes(jsonQuizzes, courseId, itemId);
+    quizSummary = statementGeneratorGetQuizzes(jsonQuizzes, moodleUserData.getCourseId(), itemId);
+    moodleUserData.setQuizSummary(quizSummary);
 
     itemModule = !jsonItem.isNull("itemmodule") ? jsonItem.getString("itemmodule") : "";
+    moodleUserGradeItem.setItemModule(itemModule);
 
     if (jsonItem.get("gradedatesubmitted") != JSONObject.NULL) {
       Date date = new Date();
-      date.setTime((long)jsonItem.getInt("gradedatesubmitted")*1000);
+      date.setTime((long) jsonItem.getInt("gradedatesubmitted") * 1000);
 
       SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
       gradeDateSubmitted = sdf.format(date) + "Z";
     }
+    moodleUserGradeItem.setGradeDateSubmitted(gradeDateSubmitted);
 
     //get rid of % and shift the format to 0.XXXX
     if (jsonItem.get("percentageformatted") != JSONObject.NULL && !jsonItem.getString("percentageformatted").equals("-")) {
@@ -303,86 +317,20 @@ public class MoodleWebServiceConnection {
       d = d/100;
       percentageFormatted = d;
     }
+    moodleUserGradeItem.setPercentageFormatted(percentageFormatted);
 
     //get rid of <p></p>
     if (jsonItem.get("feedback") != JSONObject.NULL) {
       feedback = jsonItem.getString("feedback").replaceAll("<p>", "").replaceAll("</p>", "");
     }
+    moodleUserGradeItem.setFeedback(feedback);
+
+    moodleUserData.setMoodleUserGradeItem(moodleUserGradeItem);
 
     //Creating xAPI Statements
     if (percentageFormatted != null) {
-      statements = createXAPIstatements(percentageFormatted, email, userFullName, itemModule, itemId, courseId, itemName, quizSummary,
-              courseSummary, feedback, gradeDateSubmitted, statements);
+      statements = xAPIStatements.createXAPIStatements(moodleUserData, statements, domainName);
     }
-    return statements;
-  }
-
-  /*
-   * Creating xAPI statements by taking into account the necessary attributes for actor, verb, object and result
-   */
-  private ArrayList<String> createXAPIstatements(Double percentageFormatted, String email, String userFullName,
-                                                 String itemModule, String itemId, String courseId, String itemName, String quizSummary,
-                                                 String courseSummary, String feedback, String gradeDateSubmitted, ArrayList<String> statements) {
-
-
-    JSONObject actor = new JSONObject();
-    actor.put("objectType", "Agent");
-    actor.put("mbox", "mailto:" + email);
-    actor.put("name", userFullName);
-
-    JSONObject verb = new JSONObject();
-    verb.put("id", "http://example.com/xapi/completed");
-
-    JSONObject display = new JSONObject();
-    display.put("en-US", "completed");
-
-    verb.put("display", display);
-
-    JSONObject object = new JSONObject();
-    object.put("id", domainName + "/mod/" + itemModule + "/view.php?id=" + itemId);
-
-    JSONObject definition = new JSONObject();
-    definition.put("type", domainName + "/course/view.php?id=" + courseId);
-
-    JSONObject name = new JSONObject();
-    name.put("en-US", itemName);
-
-    definition.put("name", name);
-
-    JSONObject description = new JSONObject();
-
-    if (quizSummary != null) {
-      description.put("en-US", "Course description: " + courseSummary
-              + " \n Description: " + quizSummary);
-    } else {
-      description.put("en-US", "Course description: "+ courseSummary);
-    }
-
-    definition.put("description", description);
-
-    object.put("definition", definition);
-    object.put("objectType", "Activity");
-
-    JSONObject result = new JSONObject();
-    result.put("completion", true);
-
-    if(feedback != null) {
-      result.put("response", feedback);
-    }
-
-    JSONObject score = new JSONObject();
-    score.put("scaled", percentageFormatted);
-
-    result.put("score", score);
-
-    JSONObject statement = new JSONObject();
-    statement.put("actor", actor);
-    statement.put("verb", verb);
-    statement.put("object", object);
-    statement.put("result", result);
-    statement.put("timestamp", gradeDateSubmitted);
-
-    statements.add(statement.toString());
     return statements;
   }
 }
