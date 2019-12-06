@@ -173,8 +173,6 @@ public class MoodleWebServiceConnection {
     for (int i = 0; i < jsonUserGrades.length(); i++) {
 
       moodleUserData = new MoodleUserData();
-      moodleUserGradeItem = new MoodleUserGradeItem();
-
       courseId = null;
       userFullName = null;
       userId = null;
@@ -209,6 +207,7 @@ public class MoodleWebServiceConnection {
       JSONArray jsonGradeItems = (JSONArray) jsonUser.get("gradeitems");
 
       for(int j = 0; j < jsonGradeItems.length()-1; j++) {
+        moodleUserGradeItem = new MoodleUserGradeItem();
         statements = statementGeneratorGetGrades(j, jsonGradeItems, jsonQuizzes, moodleUserData, statements, moodleUserGradeItem);
       } // end of loop jsonGradeItems
 
