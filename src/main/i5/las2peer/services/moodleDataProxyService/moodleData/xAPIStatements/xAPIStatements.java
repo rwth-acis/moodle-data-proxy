@@ -65,8 +65,16 @@ public class xAPIStatements {
             result.put("response", moodleUserData.getMoodleUserGradeItem().getFeedback());
         }
 
+        //needs to be updated
+        result.put("duration","PT" + "S");
+
+
         JSONObject score = new JSONObject();
+
         score.put("scaled", moodleUserData.getMoodleUserGradeItem().getPercentageFormatted());
+        score.put("min", moodleUserData.getMoodleUserGradeItem().getGradeMin());
+        score.put("max", moodleUserData.getMoodleUserGradeItem().getGradeMax());
+        score.put("raw", moodleUserData.getMoodleUserGradeItem().getGradeRaw());
 
         result.put("score", score);
 
@@ -77,14 +85,7 @@ public class xAPIStatements {
         statement.put("result", result);
         statement.put("timestamp", moodleUserData.getMoodleUserGradeItem().getGradeDateSubmitted());
 
-        /*
-           Validation stuff goes here
-         */
         statements.add(statement.toString());
         return statements;
-    }
-
-    private String validateXAPIStatements(String statement) {
-        return statement;
     }
 }
