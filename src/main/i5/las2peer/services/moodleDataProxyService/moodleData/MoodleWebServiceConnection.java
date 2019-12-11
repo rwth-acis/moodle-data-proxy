@@ -210,7 +210,6 @@ public class MoodleWebServiceConnection {
         moodleUserGradeItem = new MoodleUserGradeItem();
         statements = statementGeneratorGetGrades(j, jsonGradeItems, jsonQuizzes, moodleUserData, statements, moodleUserGradeItem);
       } // end of loop jsonGradeItems
-
     } // end of loop jsonUserGrades
 
     return statements;
@@ -286,6 +285,9 @@ public class MoodleWebServiceConnection {
     Double percentageFormatted = null;
     String feedback = null;
     String quizSummary = null;
+    int gradeMin = 0;
+    int gradeMax = 0;
+    int gradeRaw = 0;
 
     JSONObject jsonItem = (JSONObject) jsonGradeItems.get(index);
 
@@ -323,6 +325,21 @@ public class MoodleWebServiceConnection {
       feedback = jsonItem.getString("feedback").replaceAll("<p>", "").replaceAll("</p>", "");
     }
     moodleUserGradeItem.setFeedback(feedback);
+
+    if (jsonItem.get("grademin") != JSONObject.NULL) {
+      gradeMin = jsonItem.getInt("grademin");
+    }
+    moodleUserGradeItem.setGradeMin(gradeMin);
+
+    if (jsonItem.get("grademax") != JSONObject.NULL) {
+      gradeMax = jsonItem.getInt("grademax");
+    }
+    moodleUserGradeItem.setGradeMax(gradeMax);
+
+    if (jsonItem.get("graderaw") != JSONObject.NULL) {
+      gradeRaw = jsonItem.getInt("graderaw");
+    }
+    moodleUserGradeItem.setGradeRaw(gradeRaw);
 
     moodleUserData.setMoodleUserGradeItem(moodleUserGradeItem);
 

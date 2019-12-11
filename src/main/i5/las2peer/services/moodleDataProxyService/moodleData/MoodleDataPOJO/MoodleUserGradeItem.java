@@ -7,14 +7,14 @@ public class MoodleUserGradeItem {
     private String weightFormatted;
     private String itemName;
     private String gradeDateSubmitted;
-    private String gradeRaw;
+    private int gradeRaw;
     private String rangeFormatted;
     private Double percentageFormatted;
     private String outcomeId;
     private String gradeIsHidden;
     private String feedbackFormat;
     private String gradeFormatted;
-    private String gradeMin;
+    private int gradeMin;
     private String feedback;
     private String gradeDateGraded;
     private String itemType;
@@ -23,7 +23,7 @@ public class MoodleUserGradeItem {
     private String itemInstance;
     private String gradeHiddenByDate;
     private String gradeNeedsUpdate;
-    private String gradeMax;
+    private int gradeMax;
 
     public String getWeightFormatted() {
         return weightFormatted;
@@ -41,11 +41,11 @@ public class MoodleUserGradeItem {
         this.gradeDateSubmitted = gradeDateSubmitted;
     }
 
-    public String getGradeRaw() {
+    public int getGradeRaw() {
         return gradeRaw;
     }
 
-    public void setGradeRaw(String gradeRaw) {
+    public void setGradeRaw(int gradeRaw) {
         this.gradeRaw = gradeRaw;
     }
 
@@ -97,11 +97,11 @@ public class MoodleUserGradeItem {
         this.gradeFormatted = gradeFormatted;
     }
 
-    public String getGradeMin() {
+    public int getGradeMin() {
         return gradeMin;
     }
 
-    public void setGradeMin(String gradeMin) {
+    public void setGradeMin(int gradeMin) {
         this.gradeMin = gradeMin;
     }
 
@@ -169,11 +169,11 @@ public class MoodleUserGradeItem {
         this.gradeNeedsUpdate = gradeNeedsUpdate;
     }
 
-    public String getGradeMax() {
+    public int getGradeMax() {
         return gradeMax;
     }
 
-    public void setGradeMax(String gradeMax) {
+    public void setGradeMax(int gradeMax) {
         this.gradeMax = gradeMax;
     }
 
