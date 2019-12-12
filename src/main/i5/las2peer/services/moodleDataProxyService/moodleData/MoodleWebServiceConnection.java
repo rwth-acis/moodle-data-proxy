@@ -1,5 +1,6 @@
 package i5.las2peer.services.moodleDataProxyService.moodleData;
 
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleCourse;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserData;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserGradeItem;
 import org.json.JSONArray;
@@ -11,8 +12,18 @@ import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalField;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements.xAPIStatements;
 
@@ -160,6 +171,7 @@ public class MoodleWebServiceConnection {
     JSONArray jsonUserInfo = new JSONArray(userinfo);
     JSONObject jsonModQuiz = new JSONObject(quizzes);
     JSONArray jsonQuizzes = (JSONArray) jsonModQuiz.get("quizzes");
+    JSONArray jsonCourse = new JSONArray(courses);
 
     String courseId;
     String userFullName;
@@ -169,6 +181,7 @@ public class MoodleWebServiceConnection {
     String courseSummary;
     MoodleUserData moodleUserData;
     MoodleUserGradeItem moodleUserGradeItem;
+
 
     for (int i = 0; i < jsonUserGrades.length(); i++) {
 
@@ -184,6 +197,9 @@ public class MoodleWebServiceConnection {
 
       courseId = Integer.toString(jsonUser.getInt("courseid"));
       moodleUserData.setCourseId(courseId);
+
+      MoodleCourse moodleCourse = statementGeneratorCourse(jsonCourse, courseId);
+      moodleUserData.setMoodleCourse(moodleCourse);
 
       courseSummary = getCourseSummaryById(courseId, courses);
       moodleUserData.setCourseSummary(courseSummary);
@@ -348,5 +364,45 @@ public class MoodleWebServiceConnection {
       statements = xAPIStatements.createXAPIStatements(moodleUserData, statements, domainName);
     }
     return statements;
+  }
+
+  private MoodleCourse statementGeneratorCourse(JSONArray jsonCourses, String courseId) {
+    MoodleCourse moodleCourse = new MoodleCourse();
+    for(Object ob: jsonCourses) {
+      JSONObject jsonCourse = (JSONObject) ob;
+      if(Integer.toString(jsonCourse.getInt("id")).equals(courseId)) {
+        moodleCourse.setCategoryId(jsonCourse.getInt("categoryid"));
+        moodleCourse.setStartDate(jsonCourse.getLong("startdate"));
+        moodleCourse.setEndDate(jsonCourse.getLong("enddate"));
+
+          Date d = new Date();
+          DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+
+        if(moodleCourse.getStartDate()!=null && moodleCourse.getEndDate() != null) {
+          long startDate = moodleCourse.getStartDate().longValue() * 1000;
+          Instant instant = Instant.ofEpochMilli(startDate);
+          System.out.println(fmt.format(instant.atZone(ZoneId.systemDefault())));
+
+          Date courseStartDate = Date.from(instant);
+
+          long endDate = moodleCourse.getEndDate().longValue() * 1000;
+          Instant instantEndDate = Instant.ofEpochMilli(endDate);
+          System.out.println(fmt.format(instantEndDate.atZone(ZoneId.systemDefault())));
+
+          Date courseEndDate = Date.from(instantEndDate);
+
+          long diff = courseEndDate.getTime() - courseStartDate.getTime();
+
+          int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
+          System.out.println("difference between days: " + diffDays);
+          moodleCourse.setDuration(diffDays);
+
+        } else {
+          moodleCourse.setDuration(0);
+        }
+        moodleCourse.setFullName(jsonCourse.getString("fullname"));
+      }
+    }
+    return moodleCourse;
   }
 }

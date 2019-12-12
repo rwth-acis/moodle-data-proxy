@@ -65,16 +65,21 @@ public class xAPIStatements {
             result.put("response", moodleUserData.getMoodleUserGradeItem().getFeedback());
         }
 
+        int duration = moodleUserData.getMoodleCourse().getDuration();
         //needs to be updated
-        result.put("duration","PT" + "S");
+        result.put("duration", "P" + duration + "D");
 
-
+        //Score -- new object based on the latest xAPI validation
         JSONObject score = new JSONObject();
-
-        score.put("scaled", moodleUserData.getMoodleUserGradeItem().getPercentageFormatted());
         score.put("min", moodleUserData.getMoodleUserGradeItem().getGradeMin());
         score.put("max", moodleUserData.getMoodleUserGradeItem().getGradeMax());
         score.put("raw", moodleUserData.getMoodleUserGradeItem().getGradeRaw());
+
+        //Scale Calculation raw/max
+        double scaled = moodleUserData.getMoodleUserGradeItem().getGradeMax() != 0 ?
+                ((double)moodleUserData.getMoodleUserGradeItem().getGradeRaw()/(double)moodleUserData.getMoodleUserGradeItem().getGradeMax())
+                :0.0;
+        score.put("scaled", scaled);
 
         result.put("score", score);
 
