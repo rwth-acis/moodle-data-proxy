@@ -152,7 +152,7 @@ public class MoodleDataProxyService extends RESTService {
             Context.getCurrent().getMainAgent().getIdentifier(),courseId,courseSummary);
 
     Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_5, jsonObject.toString());
-
+    initiateMoodleConnection(courseId);
     return Response.ok().entity(courseSummary).build();
   }
 
@@ -257,9 +257,6 @@ public class MoodleDataProxyService extends RESTService {
 
     jsonObject.put("attributes", attributes);
 
-    Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_5, jsonObject.toString());
-
-    initiateMoodleConnection(courseId);
 
     //return ok message
     return jsonObject;
