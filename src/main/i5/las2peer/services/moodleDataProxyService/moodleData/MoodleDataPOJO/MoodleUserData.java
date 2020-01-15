@@ -10,6 +10,7 @@ public class MoodleUserData {
     private String userId;
     private String courseName;
     private MoodleUserGradeItem moodleUserGradeItem;
+    private MoodleCourse moodleCourse;
 
     public String getEmail() {
         return email;
@@ -73,5 +74,13 @@ public class MoodleUserData {
 
     public void setMoodleUserGradeItem(MoodleUserGradeItem moodleUserGradeItem) {
         this.moodleUserGradeItem = moodleUserGradeItem;
+    }
+
+    public MoodleCourse getMoodleCourse() {
+        return moodleCourse;
+    }
+
+    public void setMoodleCourse(MoodleCourse moodleCourse) {
+        this.moodleCourse = moodleCourse;
     }
 }

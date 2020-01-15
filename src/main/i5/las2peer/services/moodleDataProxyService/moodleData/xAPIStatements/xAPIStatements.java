@@ -83,6 +83,9 @@ public class xAPIStatements {
 
         result.put("score", score);
 
+        //can be changed according to the setting
+        result.put("success", true);
+
         JSONObject statement = new JSONObject();
         statement.put("actor", actor);
         statement.put("verb", verb);
