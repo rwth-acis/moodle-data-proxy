@@ -8,11 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -134,14 +130,37 @@ public class MoodleDataProxyService extends RESTService {
           value = { @ApiResponse(
                   code = HttpURLConnection.HTTP_OK,
                   message = "Connection works") })
-  public Response getCourseSummary(@PathParam("courseId") int courseId) {
+  public Response getCourseSummary(@PathParam("courseId") int courseId, @HeaderParam("username") String userName,
+                                   @HeaderParam("password") String password, @HeaderParam("service") String serviceName) {
+
+
     String courses = "";
     String courseSummary = "";
 
-    //Retrieving the moodle data
     try {
-      courses = moodle.core_course_get_courses();
-      courseSummary = moodle.getCourseSummaryById(Integer.toString(courseId), courses);
+      //Backend calls
+        if(userName != null && password != null && serviceName != null) {
+          moodleToken = moodle.getUserTokenFromMoodle(userName, password, serviceName);
+          if(moodleToken != "") {
+            moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
+          } else {
+            return Response.status(Response.Status.FORBIDDEN).entity("You do not have permissions to view this entity").build();
+          }
+        } else {
+          return Response.status(Response.Status.FORBIDDEN).entity("You do not have permissions to view this entity").build();
+        }
+
+      //Retrieving the moodle data
+      try {
+        courses = moodle.core_course_get_courses();
+        if(courses != null && courses.contains("exception")) {
+          throw new IOException();
+        }
+        courseSummary = moodle.getCourseSummaryById(Integer.toString(courseId), courses);
+      } catch (IOException e) {
+        e.printStackTrace();
+        return Response.status(500).entity("An error occurred with requesting moodle data").build();
+      }
     } catch (IOException e) {
       e.printStackTrace();
       return Response.status(500).entity("An error occurred with requesting moodle data").build();
@@ -151,9 +170,9 @@ public class MoodleDataProxyService extends RESTService {
     JSONObject jsonObject = createJSONObject("getCourseSummary",
             Context.getCurrent().getMainAgent().getIdentifier(),courseId,courseSummary);
 
-    Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_5, jsonObject.toString());
-    initiateMoodleConnection(courseId);
-    return Response.ok().entity(courseSummary).build();
+      Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_5, jsonObject.toString());
+      initiateMoodleConnection(courseId);
+      return Response.ok().entity(courseSummary).build();
   }
 
   /**
@@ -170,7 +189,8 @@ public class MoodleDataProxyService extends RESTService {
           value = { @ApiResponse(
                   code = HttpURLConnection.HTTP_OK,
                   message = "Moodle connection is initiated") })
-  public Response getChanges(@PathParam("courseId") int courseId){
+  public Response getChanges(@PathParam("courseId") int courseId, @HeaderParam("username") String userName,
+                             @HeaderParam("password") String password, @HeaderParam("service") String serviceName){
     String gradeReport = "";
     String userInfo = "";
     String quizzes = "";
@@ -179,21 +199,38 @@ public class MoodleDataProxyService extends RESTService {
     ArrayList<String> newStatements;
     ArrayList<String> oldStatements = new ArrayList<>();
 
-    // Retrieving moodle data
     try {
-      gradeReport = moodle.gradereport_user_get_grade_items(courseId);
-      userInfo = moodle.core_enrol_get_enrolled_users(courseId);
-      quizzes = moodle.mod_quiz_get_quizzes_by_courses(courseId);
-      courses = moodle.core_course_get_courses();
+      if (userName != null && password != null && serviceName != null) {
+        moodleToken = moodle.getUserTokenFromMoodle(userName, password, serviceName);
+        if (moodleToken != "") {
+          moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
+        } else {
+          return Response.status(Response.Status.FORBIDDEN).entity("You do not have permissions to view this entity").build();
+        }
+      } else {
+        return Response.status(Response.Status.FORBIDDEN).entity("You do not have permissions to view this entity").build();
+      }
 
-      newStatements = moodle.statementGenerator(gradeReport, userInfo, quizzes, courses);
-
-    } catch (IOException e) {
-      e.printStackTrace();
-      return Response.status(500).entity("An error occured with requesting moodle data").build();
-    } catch (JSONException e1) {
-      e1.printStackTrace();
-      return Response.status(500).entity("An error occured with generating the xAPI statement").build();
+      // Retrieving moodle data
+      try {
+        gradeReport = moodle.gradereport_user_get_grade_items(courseId);
+        userInfo = moodle.core_enrol_get_enrolled_users(courseId);
+        quizzes = moodle.mod_quiz_get_quizzes_by_courses(courseId);
+        courses = moodle.core_course_get_courses(); //For this, admin token can be used
+        if(courses.contains("exception")) { //This needs to be discussed
+          courses = "";
+        }
+        newStatements = moodle.statementGenerator(gradeReport, userInfo, quizzes, courses);
+      } catch (IOException e) {
+        e.printStackTrace();
+        return Response.status(500).entity("An error occured with requesting moodle data").build();
+      } catch (JSONException e1) {
+        e1.printStackTrace();
+        return Response.status(500).entity("An error occured with generating the xAPI statement").build();
+      }
+    } catch (IOException ex) {
+      ex.printStackTrace();
+      return Response.status(500).entity("An error occurred with requesting moodle data").build();
     }
 
     if (MoodleDataProxyService.oldCourseStatements.get(courseId) != null) {
