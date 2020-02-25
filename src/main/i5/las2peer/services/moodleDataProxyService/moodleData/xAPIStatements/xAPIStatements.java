@@ -7,11 +7,11 @@ import java.util.ArrayList;
 
 public class xAPIStatements {
 
-    public static ArrayList<String> createXAPIStatements(MoodleUserData moodleUserData, ArrayList<String> statements, String domainName) {
+    public static ArrayList<String> createXAPIStatements(MoodleUserData moodleUserData, ArrayList<String> statements, String domainName, String userToken) {
         JSONObject actor = new JSONObject();
         //Actor
         actor.put("objectType", "Agent");
-        actor.put("mbox", "mailto:" + moodleUserData.getEmail());
+//        actor.put("mbox", "mailto:" + moodleUserData.getEmail());
         actor.put("name", moodleUserData.getUserFullName());
 
         //Account -- new object based on the latest xAPI validation
@@ -92,8 +92,7 @@ public class xAPIStatements {
         statement.put("object", object);
         statement.put("result", result);
         statement.put("timestamp", moodleUserData.getMoodleUserGradeItem().getGradeDateSubmitted());
-
-        statements.add(statement.toString());
+        statements.add(statement.toString() + "*" + userToken + "*" );
         return statements;
     }
 }

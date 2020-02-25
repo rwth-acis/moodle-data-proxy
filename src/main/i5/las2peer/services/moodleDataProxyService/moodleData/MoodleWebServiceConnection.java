@@ -394,7 +394,7 @@ public class MoodleWebServiceConnection {
 
     //Creating xAPI Statements
     if (percentageFormatted != null) {
-      statements = xAPIStatements.createXAPIStatements(moodleUserData, statements, domainName);
+      statements = xAPIStatements.createXAPIStatements(moodleUserData, statements, domainName, token);
     }
     return statements;
   }
