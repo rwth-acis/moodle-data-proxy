@@ -2,202 +2,284 @@ package i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO;
 
 public class MoodleUserGradeItem {
 
-    private String itemId;
-    private String itemNumber;
-    private String weightFormatted;
-    private String itemName;
-    private String gradeDateSubmitted;
-    private int gradeRaw;
-    private String rangeFormatted;
-    private Double percentageFormatted;
-    private String outcomeId;
-    private String gradeIsHidden;
-    private String feedbackFormat;
-    private String gradeFormatted;
-    private int gradeMin;
-    private String feedback;
-    private String gradeDateGraded;
-    private String itemType;
-    private String itemModule;
-    private String weightRaw;
-    private String itemInstance;
-    private String gradeHiddenByDate;
-    private String gradeNeedsUpdate;
-    private int gradeMax;
+	private Integer id;
+	private Integer courseid;
+	private String itemname;
+	private String itemtype;
+	private String itemmodule;
+	private Integer iteminstance;
+	private Integer itemnumber;
+	private Integer categoryid;
+	private Integer outcomeid;
+	private Integer scaleid;
+	private Boolean locked;
+	private Integer cmid;
+	private Double weightraw;
+	private String weightformatted;
+	private String status;
+	private Double graderaw;
+	private Long gradedatesubmitted;
+	private Long gradedategraded;
+	private Boolean gradehiddenbydate;
+	private Boolean gradeneedsupdate;
+	private Boolean gradeishidden;
+	private Boolean gradeislocked;
+	private Boolean gradeisoverridden;
+	private String gradeformatted;
+	private Double grademin;
+	private Double grademax;
+	private String rangeformatted;
+	private String percentageformatted;
+	private String feedback;
+	private Integer feedbackformat;
+	private Long duration;
 
-    public String getWeightFormatted() {
-        return weightFormatted;
-    }
+	public Integer getId() {
+		return id;
+	}
 
-    public void setWeightFormatted(String weightFormatted) {
-        this.weightFormatted = weightFormatted;
-    }
+	public void setId(Integer id) {
+		this.id = id;
+	}
 
-    public String getGradeDateSubmitted() {
-        return gradeDateSubmitted;
-    }
+	public String getItemname() {
+		return itemname;
+	}
 
-    public void setGradeDateSubmitted(String gradeDateSubmitted) {
-        this.gradeDateSubmitted = gradeDateSubmitted;
-    }
+	public void setItemname(String itemname) {
+		this.itemname = itemname;
+	}
 
-    public int getGradeRaw() {
-        return gradeRaw;
-    }
+	public String getItemtype() {
+		return itemtype;
+	}
 
-    public void setGradeRaw(int gradeRaw) {
-        this.gradeRaw = gradeRaw;
-    }
+	public void setItemtype(String itemtype) {
+		this.itemtype = itemtype;
+	}
 
-    public String getRangeFormatted() {
-        return rangeFormatted;
-    }
+	public String getItemmodule() {
+		return itemmodule;
+	}
 
-    public void setRangeFormatted(String rangeFormatted) {
-        this.rangeFormatted = rangeFormatted;
-    }
+	public void setItemmodule(String itemmodule) {
+		this.itemmodule = itemmodule;
+	}
 
-    public Double getPercentageFormatted() {
-        return percentageFormatted;
-    }
+	public Integer getIteminstance() {
+		return iteminstance;
+	}
 
-    public void setPercentageFormatted(Double percentageFormatted) {
-        this.percentageFormatted = percentageFormatted;
-    }
+	public void setIteminstance(Integer iteminstance) {
+		this.iteminstance = iteminstance;
+	}
 
-    public String getOutcomeId() {
-        return outcomeId;
-    }
+	public Integer getItemnumber() {
+		return itemnumber;
+	}
 
-    public void setOutcomeId(String outcomeId) {
-        this.outcomeId = outcomeId;
-    }
+	public void setItemnumber(Integer itemnumber) {
+		this.itemnumber = itemnumber;
+	}
 
-    public String getGradeIsHidden() {
-        return gradeIsHidden;
-    }
+	public Integer getCategoryid() {
+		return categoryid;
+	}
 
-    public void setGradeIsHidden(String gradeIsHidden) {
-        this.gradeIsHidden = gradeIsHidden;
-    }
+	public void setCategoryid(Integer categoryid) {
+		this.categoryid = categoryid;
+	}
 
-    public String getFeedbackFormat() {
-        return feedbackFormat;
-    }
+	public Integer getOutcomeid() {
+		return outcomeid;
+	}
 
-    public void setFeedbackFormat(String feedbackFormat) {
-        this.feedbackFormat = feedbackFormat;
-    }
+	public void setOutcomeid(Integer outcomeid) {
+		this.outcomeid = outcomeid;
+	}
 
-    public String getGradeFormatted() {
-        return gradeFormatted;
-    }
+	public Integer getScaleid() {
+		return scaleid;
+	}
 
-    public void setGradeFormatted(String gradeFormatted) {
-        this.gradeFormatted = gradeFormatted;
-    }
+	public void setScaleid(Integer scaleid) {
+		this.scaleid = scaleid;
+	}
 
-    public int getGradeMin() {
-        return gradeMin;
-    }
+	public Boolean getLocked() {
+		return locked;
+	}
 
-    public void setGradeMin(int gradeMin) {
-        this.gradeMin = gradeMin;
-    }
+	public void setLocked(Boolean locked) {
+		this.locked = locked;
+	}
 
-    public String getFeedback() {
-        return feedback;
-    }
+	public Integer getCmid() {
+		return cmid;
+	}
 
-    public void setFeedback(String feedback) {
-        this.feedback = feedback;
-    }
+	public void setCmid(Integer cmid) {
+		this.cmid = cmid;
+	}
 
-    public String getGradeDateGraded() {
-        return gradeDateGraded;
-    }
+	public Double getWeightraw() {
+		return weightraw;
+	}
 
-    public void setGradeDateGraded(String gradeDateGraded) {
-        this.gradeDateGraded = gradeDateGraded;
-    }
+	public void setWeightraw(Double weightraw) {
+		this.weightraw = weightraw;
+	}
 
-    public String getItemType() {
-        return itemType;
-    }
+	public String getWeightformatted() {
+		return weightformatted;
+	}
 
-    public void setItemType(String itemType) {
-        this.itemType = itemType;
-    }
+	public void setWeightformatted(String weightformatted) {
+		this.weightformatted = weightformatted;
+	}
 
-    public String getItemModule() {
-        return itemModule;
-    }
+	public String getStatus() {
+		return status;
+	}
 
-    public void setItemModule(String itemModule) {
-        this.itemModule = itemModule;
-    }
+	public void setStatus(String status) {
+		this.status = status;
+	}
 
-    public String getWeightRaw() {
-        return weightRaw;
-    }
+	public Double getGraderaw() {
+		return graderaw;
+	}
 
-    public void setWeightRaw(String weightRaw) {
-        this.weightRaw = weightRaw;
-    }
+	public void setGraderaw(Double graderaw) {
+		this.graderaw = graderaw;
+	}
 
-    public String getItemInstance() {
-        return itemInstance;
-    }
+	public Long getGradedatesubmitted() {
+		return gradedatesubmitted;
+	}
 
-    public void setItemInstance(String itemInstance) {
-        this.itemInstance = itemInstance;
-    }
+	public void setGradedatesubmitted(Long gradedatesubmitted) {
+		this.gradedatesubmitted = gradedatesubmitted;
+	}
 
-    public String getGradeHiddenByDate() {
-        return gradeHiddenByDate;
-    }
+	public Long getGradedategraded() {
+		return gradedategraded;
+	}
 
-    public void setGradeHiddenByDate(String gradeHiddenByDate) {
-        this.gradeHiddenByDate = gradeHiddenByDate;
-    }
+	public void setGradedategraded(Long gradedategraded) {
+		this.gradedategraded = gradedategraded;
+	}
 
-    public String getGradeNeedsUpdate() {
-        return gradeNeedsUpdate;
-    }
+	public Boolean getGradehiddenbydate() {
+		return gradehiddenbydate;
+	}
 
-    public void setGradeNeedsUpdate(String gradeNeedsUpdate) {
-        this.gradeNeedsUpdate = gradeNeedsUpdate;
-    }
+	public void setGradehiddenbydate(Boolean gradehiddenbydate) {
+		this.gradehiddenbydate = gradehiddenbydate;
+	}
 
-    public int getGradeMax() {
-        return gradeMax;
-    }
+	public Boolean getGradeneedsupdate() {
+		return gradeneedsupdate;
+	}
 
-    public void setGradeMax(int gradeMax) {
-        this.gradeMax = gradeMax;
-    }
+	public void setGradeneedsupdate(Boolean gradeneedsupdate) {
+		this.gradeneedsupdate = gradeneedsupdate;
+	}
 
-    public String getItemNumber() {
-        return itemNumber;
-    }
+	public Boolean getGradeishidden() {
+		return gradeishidden;
+	}
 
-    public void setItemNumber(String itemNumber) {
-        this.itemNumber = itemNumber;
-    }
+	public void setGradeishidden(Boolean gradeishidden) {
+		this.gradeishidden = gradeishidden;
+	}
 
-    public String getItemName() {
-        return itemName;
-    }
+	public Boolean getGradeislocked() {
+		return gradeislocked;
+	}
 
-    public void setItemName(String itemName) {
-        this.itemName = itemName;
-    }
+	public void setGradeislocked(Boolean gradeislocked) {
+		this.gradeislocked = gradeislocked;
+	}
 
-    public String getItemId() {
-        return itemId;
-    }
+	public Boolean getGradeisoverridden() {
+		return gradeisoverridden;
+	}
 
-    public void setItemId(String itemId) {
-        this.itemId = itemId;
-    }
+	public void setGradeisoverridden(Boolean gradeisoverridden) {
+		this.gradeisoverridden = gradeisoverridden;
+	}
+
+	public String getGradeformatted() {
+		return gradeformatted;
+	}
+
+	public void setGradeformatted(String gradeformatted) {
+		this.gradeformatted = gradeformatted;
+	}
+
+	public Double getGrademin() {
+		return grademin;
+	}
+
+	public void setGrademin(Double grademin) {
+		this.grademin = grademin;
+	}
+
+	public Double getGrademax() {
+		return grademax;
+	}
+
+	public void setGrademax(Double grademax) {
+		this.grademax = grademax;
+	}
+
+	public String getRangeformatted() {
+		return rangeformatted;
+	}
+
+	public void setRangeformatted(String rangeformatted) {
+		this.rangeformatted = rangeformatted;
+	}
+
+	public String getPercentageformatted() {
+		return percentageformatted;
+	}
+
+	public void setPercentageformatted(String percentageformatted) {
+		this.percentageformatted = percentageformatted;
+	}
+
+	public String getFeedback() {
+		return feedback;
+	}
+
+	public void setFeedback(String feedback) {
+		this.feedback = feedback;
+	}
+
+	public Integer getFeedbackformat() {
+		return feedbackformat;
+	}
+
+	public void setFeedbackformat(Integer feedbackformat) {
+		this.feedbackformat = feedbackformat;
+	}
+
+	public Integer getCourseid() {
+		return courseid;
+	}
+
+	public void setCourseid(Integer courseid) {
+		this.courseid = courseid;
+	}
+
+	public Long getDuration() {
+		return duration;
+	}
+
+	public void setDuration(Long duration) {
+		this.duration = duration;
+	}
+
 }
