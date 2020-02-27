@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.time.Instant;
@@ -31,6 +30,8 @@ public class MoodleWebServiceConnection {
 	private static String restFormat = "&moodlewsrestformat=json";
 
 	/**
+	 * @param token access token for the moodle instance
+	 * @param domainName domain of the moodle instance
 	 */
 	public MoodleWebServiceConnection(String token, String domainName) {
 		MoodleWebServiceConnection.token = token;
@@ -47,8 +48,9 @@ public class MoodleWebServiceConnection {
 	 * @param functionName This the function name for the moodle rest request.
 	 * @param urlParameters These are the parameters in one String for the moodle rest request.
 	 * @return Returns the output of the moodle rest request.
-	 */
-	private String restRequest(String functionName, String urlParameters) throws ProtocolException, IOException {
+	 * @throws IOException if an I/O exception occurs.
+	 **/
+	private String restRequest(String functionName, String urlParameters) throws IOException {
 		// Send request
 		String serverUrl = domainName + "/webservice/rest/server.php" + "?wstoken=" + token + "&wsfunction="
 				+ functionName + restFormat;
@@ -85,27 +87,61 @@ public class MoodleWebServiceConnection {
 
 	/**
 	 * @return Returns the information to all courses in moodle
-	 */
-	public String core_course_get_courses() throws ProtocolException, IOException {
+	 * @throws IOException if an I/O exception occurs.
+	 **/
+	public String core_course_get_courses() throws IOException {
 		return restRequest("core_course_get_courses", null);
 	}
 
 	/**
 	 * @param courseId This is Id of the course you want to have enrolled users of
 	 * @return Returns enrolled users for specified course
-	 */
-	public String core_enrol_get_enrolled_users(int courseId) throws ProtocolException, IOException {
+	 * @throws IOException if an I/O exception occurs.
+	 **/
+	public String core_enrol_get_enrolled_users(int courseId) throws IOException {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
 		return restRequest("core_enrol_get_enrolled_users", urlParameters);
 	}
+	
+	/**
+	 * @return site information and current user information
+	 * @throws IOException if an I/O exception occurs.
+	 */
+	public String core_webservice_get_site_info() throws IOException {
+		return restRequest("core_enrol_get_enrolled_users", "");
+	}
+	
+	/**
+	 * @param field which should be checked
+	 * @param value of the field
+	 * @return user object for given field
+	 * @throws IOException if an I/O exception occurs.
+	 */
+	public String core_user_get_users_by_field(String field, int value) throws IOException {
+		String urlParameters = "field=" + URLEncoder.encode(field, "UTF-8");
+		urlParameters += "&value[0]=" + URLEncoder.encode(Integer.toString(value), "UTF-8");
+		return restRequest("core_user_get_users_by_field", urlParameters);
+	}
+	
 
-	public String core_course_get_updates_since(int courseId, long since) throws ProtocolException, IOException {
+	/**
+	 * @param courseId id of the course you want to have updates
+	 * @param since long containing the unix timestamp 
+	 * @return updates since given timestamp
+	 * @throws IOException if an I/O exception occurs.
+	 */
+	public String core_course_get_updates_since(int courseId, long since) throws IOException {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
 		urlParameters += "&since=" + URLEncoder.encode(Long.toString(since), "UTF-8");
 		return restRequest("core_course_get_updates_since", urlParameters);
 	}
 
-	public String mod_assign_get_submissions(int assignmentId) throws ProtocolException, IOException {
+	/**
+	 * @param assignmentId id of the assignment you want to get the submissions from.
+	 * @return submissions for given id.
+	 * @throws IOException if an I/O exception occurs.
+	 */
+	public String mod_assign_get_submissions(int assignmentId) throws IOException {
 		String urlParameters = "assignmentids[0]=" + URLEncoder.encode(Integer.toString(assignmentId), "UTF-8");
 		return restRequest("mod_assign_get_submissions", urlParameters);
 	}
@@ -113,8 +149,9 @@ public class MoodleWebServiceConnection {
 	/**
 	 * @param userId This is Id of the user you want to have the courses of
 	 * @return Returns courses where the specified user is enrolled in
-	 */
-	public String core_enrol_get_users_courses(int userId) throws ProtocolException, IOException {
+	 * @throws IOException if an I/O exception occurs.
+	 **/
+	public String core_enrol_get_users_courses(int userId) throws IOException {
 		String urlParameters = "userid=" + URLEncoder.encode(Integer.toString(userId), "UTF-8");
 		return restRequest("core_enrol_get_users_courses", urlParameters);
 	}
@@ -122,8 +159,9 @@ public class MoodleWebServiceConnection {
 	/**
 	 * @param courseId This is Id of the course you want to have grades of
 	 * @return Returns grades for all users, who are enrolled in the specified course
-	 */
-	public String gradereport_user_get_grade_items(int courseId) throws ProtocolException, IOException {
+	 * @throws IOException if an I/O exception occurs.
+	 **/
+	public String gradereport_user_get_grade_items(int courseId) throws IOException {
 
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
 		return restRequest("gradereport_user_get_grade_items", urlParameters);
@@ -133,8 +171,9 @@ public class MoodleWebServiceConnection {
 	 * @param courseId This is Id of the course you want to have grades of
 	 * @param userId This is Id of the user you want to have grades of
 	 * @return Returns grades for the specified course and user
-	 */
-	public String gradereport_user_get_grade_items(int courseId, int userId) throws ProtocolException, IOException {
+	 * @throws IOException if an I/O exception occurs.
+	 **/
+	public String gradereport_user_get_grade_items(int courseId, int userId) throws IOException {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8") + "&userid="
 				+ URLEncoder.encode(Integer.toString(userId), "UTF-8");
 		return restRequest("gradereport_user_get_grade_items", urlParameters);
@@ -143,17 +182,19 @@ public class MoodleWebServiceConnection {
 	/**
 	 * @param attemptId This is Id of the course you want to have grades of
 	 * @return Returns quiz information for the specified course
+	 * @throws IOException if an I/O exception occurs.
 	 */
-	public String mod_quiz_get_attempt_review(int attemtId) throws ProtocolException, IOException {
-		String urlParameters = "attemptid=" + URLEncoder.encode(Integer.toString(attemtId), "UTF-8");
+	public String mod_quiz_get_attempt_review(int attemptId) throws IOException {
+		String urlParameters = "attemptid=" + URLEncoder.encode(Integer.toString(attemptId), "UTF-8");
 		return restRequest("mod_quiz_get_attempt_review", urlParameters);
 	}
 
 	/**
 	 * @param courseId This is Id of the course you want to have grades of
 	 * @return Returns quiz information for the specified course
+	 * @throws IOException if an I/O exception occurs.
 	 */
-	public String mod_quiz_get_quizzes_by_courses(int courseId) throws ProtocolException, IOException {
+	public String mod_quiz_get_quizzes_by_courses(int courseId) throws IOException {
 		String urlParameters = "courseids[0]=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
 		return restRequest("mod_quiz_get_quizzes_by_courses", urlParameters);
 	}

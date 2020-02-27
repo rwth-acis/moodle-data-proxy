@@ -53,6 +53,8 @@ public class MoodleDataProxyService extends Service {
 	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataProxyService.class.getName());
 
 	private static Context context = null;
+	
+	private static String email = "";
 
 	/**
 	 * 
@@ -71,6 +73,20 @@ public class MoodleDataProxyService extends Service {
 		}
 
 		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
+		
+		if(email.equals("")) {
+			try {
+			String siteInfoRaw = moodle.core_webservice_get_site_info();
+			JSONObject siteInfo = new JSONObject(siteInfoRaw);
+			String currentUserInfoRaw = moodle.core_user_get_users_by_field("id", siteInfo.getInt("userid"));
+			JSONArray currentUserInfo = new JSONArray(currentUserInfoRaw);
+			JSONObject u = currentUserInfo.getJSONObject(0);
+			email = u.getString("email");
+			}catch(IOException e){
+				e.printStackTrace();
+			}
+		}
+		
 		if (courseList == null || courseList.isEmpty()) {
 			try {
 				String courses = moodle.core_course_get_courses();
@@ -104,6 +120,7 @@ public class MoodleDataProxyService extends Service {
 	 * @return a response message if everything went ok
 	 * 
 	 */
+	@Deprecated
 	public boolean submitDataForCourse(int courseId) {
 
 		String gradeReport = "";
@@ -170,7 +187,7 @@ public class MoodleDataProxyService extends Service {
 									long finish = quizReviewAttempt.getLong("timefinish");
 									gItem.setDuration(finish - start);
 									context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, xAPIStatements
-											.createXAPIStatementGrades(moodleUserData, gItem, moodle.getDomainName()));
+											.createXAPIStatementGrades(moodleUserData, gItem, moodle.getDomainName()+"*"+email+"*"));
 								} else if (gItem.getItemtype().equals("assign")) {
 									String assignSubmissionsRaw = moodle
 											.mod_assign_get_submissions(gItem.getIteminstance());
@@ -181,9 +198,8 @@ public class MoodleDataProxyService extends Service {
 									long finish = mas.getTimemodified();
 									gItem.setDuration(finish - start);
 									context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, xAPIStatements
-											.createXAPIStatementGrades(moodleUserData, gItem, moodle.getDomainName()));
+											.createXAPIStatementGrades(moodleUserData, gItem, moodle.getDomainName()+"*"+email+"*"));
 								}
-
 								System.out.println("Item " + gItem.getId() + " graded");
 							}
 						}
