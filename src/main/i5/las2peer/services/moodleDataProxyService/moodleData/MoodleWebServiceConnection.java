@@ -8,7 +8,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
-import java.net.*;
+import java.net.HttpURLConnection;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -133,42 +136,6 @@ public class MoodleWebServiceConnection {
     String urlParameters = "courseids[0]=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
     return restRequest("mod_quiz_get_quizzes_by_courses", urlParameters);
   }
-
-  public String core_user_get_users_by_field(String email) throws ProtocolException, IOException {
-    String urlParameters = "email=" + email;
-    return restRequest("core_user_get_users_by_field", urlParameters);
-  }
-
-
-  public String getUserTokenFromMoodle(String userName, String password, String serviceShortName) throws IOException {
-    String serverURL = domainName + "/login/token.php?username=" + userName + "&password=" + password + "&service=" +  serviceShortName;
-    String token = "";
-    HttpURLConnection con = (HttpURLConnection) new URL(serverURL).openConnection();
-
-    con.setRequestMethod("GET");
-    con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-    con.setRequestProperty("Content-Language", "en-US");
-    con.setDoOutput(true);
-    con.setUseCaches (false);
-    con.setDoInput(true);
-
-    InputStream inputStream = con.getInputStream ();
-    BufferedReader rd = new BufferedReader(new InputStreamReader(inputStream));
-    String line;
-    StringBuilder response = new StringBuilder();
-    while((line = rd.readLine()) != null) {
-      response.append(line);
-      response.append('\r');
-    }
-    rd.close();
-    JSONObject myObject = new JSONObject(response.toString());
-    if( !myObject.isNull("token")) {
-      return  String.valueOf(myObject.get("token"));
-    } else {
-      return "";
-    }
-  }
-
 
   /**
    * @param courseId This is Id of the course you want to the summary of
@@ -399,7 +366,7 @@ public class MoodleWebServiceConnection {
     return statements;
   }
 
-  public MoodleCourse statementGeneratorCourse(JSONArray jsonCourses, String courseId) {
+  private MoodleCourse statementGeneratorCourse(JSONArray jsonCourses, String courseId) {
     MoodleCourse moodleCourse = new MoodleCourse();
     for(Object ob: jsonCourses) {
       JSONObject jsonCourse = (JSONObject) ob;
