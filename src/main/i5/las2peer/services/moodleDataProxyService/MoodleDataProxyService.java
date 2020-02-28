@@ -78,7 +78,8 @@ public class MoodleDataProxyService extends Service {
 			try {
 			String siteInfoRaw = moodle.core_webservice_get_site_info();
 			JSONObject siteInfo = new JSONObject(siteInfoRaw);
-			String currentUserInfoRaw = moodle.core_user_get_users_by_field("id", siteInfo.getInt("userid"));
+			int userId = siteInfo.getInt("userid");
+			String currentUserInfoRaw = moodle.core_user_get_users_by_field("id", userId);
 			JSONArray currentUserInfo = new JSONArray(currentUserInfoRaw);
 			JSONObject u = currentUserInfo.getJSONObject(0);
 			email = u.getString("email");

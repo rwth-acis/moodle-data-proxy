@@ -108,7 +108,7 @@ public class MoodleWebServiceConnection {
 	 * @throws IOException if an I/O exception occurs.
 	 */
 	public String core_webservice_get_site_info() throws IOException {
-		return restRequest("core_enrol_get_enrolled_users", "");
+		return restRequest("core_webservice_get_site_info", "");
 	}
 	
 	/**
@@ -119,7 +119,7 @@ public class MoodleWebServiceConnection {
 	 */
 	public String core_user_get_users_by_field(String field, int value) throws IOException {
 		String urlParameters = "field=" + URLEncoder.encode(field, "UTF-8");
-		urlParameters += "&value[0]=" + URLEncoder.encode(Integer.toString(value), "UTF-8");
+		urlParameters += "&values[0]=" + URLEncoder.encode(Integer.toString(value), "UTF-8");
 		return restRequest("core_user_get_users_by_field", urlParameters);
 	}
 	
