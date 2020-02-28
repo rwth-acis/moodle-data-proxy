@@ -55,7 +55,7 @@ echo external_address = $(curl -s https://ipinfo.io/ip):${LAS2PEER_PORT} > etc/p
 # start the service within a las2peer node
 if [[ -z "${@}" ]]
 then
-  exec ${LAUNCH_COMMAND} --observer uploadStartupDirectory startService\("'""${SERVICE}""'"\) registerUserAgent\("'alice','pwalice'"\) invoke("'""${SERVICE}""','initMoodleProxy',''"\)  startWebConnector
+  exec ${LAUNCH_COMMAND} --observer uploadStartupDirectory startService\("'""${SERVICE}""'"\) registerUserAgent\("'"alice"'","'"pwalice"'"\) invoke("'""${SERVICE}""'","'"initMoodleProxy"'","'""'"\)  startWebConnector
 else
   exec ${LAUNCH_COMMAND} ${@}
 fi
