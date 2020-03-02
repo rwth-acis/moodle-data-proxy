@@ -145,8 +145,11 @@ public class MoodleDataProxyService extends RESTService {
 		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
 			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
 		}
+
 		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
-		if (!u.getEmail().equals(email)) {
+		String email = u.getEmail();
+
+		if (!email.equals(email)) {
 			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
 		}
 		if (dataStreamThread == null) {
