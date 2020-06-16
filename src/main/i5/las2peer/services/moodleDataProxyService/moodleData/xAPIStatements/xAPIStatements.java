@@ -152,9 +152,13 @@ public class xAPIStatements {
 			result.put("response", gItem.getFeedback());
 		}
 
-		long duration = gItem.getDuration();
-		// needs to be updated
-		result.put("duration", "P" + duration + "D");
+		try {
+			long duration = gItem.getDuration();
+			// needs to be updated
+			result.put("duration", "P" + duration + "D");
+		} catch (Exception e) {
+			result.put("duration", "undefined");
+		}
 
 		// Score -- new object based on the latest xAPI validation
 		JSONObject score = new JSONObject();

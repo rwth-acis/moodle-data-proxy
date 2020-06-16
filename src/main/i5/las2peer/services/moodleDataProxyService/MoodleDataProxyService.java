@@ -58,10 +58,10 @@ import io.swagger.annotations.SwaggerDefinition;
 						email = "neumann@rwth-aachen.de")))
 
 /**
- * 
+ *
  * This service is for requesting moodle data and creating corresponding xAPI statement. It sends REST requests to
  * moodle on basis of implemented functions in MoodleWebServiceConnection.
- * 
+ *
  */
 @ManualDeployment
 @ServicePath("moodle")
@@ -86,10 +86,10 @@ public class MoodleDataProxyService extends RESTService {
 	private static String email = "";
 
 	/**
-	 * 
+	 *
 	 * Constructor of the Service. Loads the database values from a property file and initiates values for a moodle
 	 * connection.
-	 * 
+	 *
 	 */
 	public MoodleDataProxyService() {
 		setFieldValues(); // This sets the values of the configuration file
@@ -167,9 +167,9 @@ public class MoodleDataProxyService extends RESTService {
 	 * A function that is called by the user to send processed moodle to a mobsos data processing instance.
 	 *
 	 * @param courseId an integer indicating the id of a moodle course
-	 * 
+	 *
 	 * @return a response message if everything went ok
-	 * 
+	 *
 	 */
 	@Deprecated
 	public boolean submitDataForCourse(int courseId) {
@@ -249,6 +249,11 @@ public class MoodleDataProxyService extends RESTService {
 									long start = mas.getTimecreated();
 									long finish = mas.getTimemodified();
 									gItem.setDuration(finish - start);
+									context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,
+											xAPIStatements.createXAPIStatementGrades(moodleUserData, gItem,
+													moodle.getDomainName() + "*" + email + "*"));
+								}
+								else {
 									context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,
 											xAPIStatements.createXAPIStatementGrades(moodleUserData, gItem,
 													moodle.getDomainName() + "*" + email + "*"));
