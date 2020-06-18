@@ -87,8 +87,8 @@ public class MoodleDataProxyService extends RESTService {
 
 	/**
 	 *
-	 * Constructor of the Service. Loads the database values from a property file and initiates values for a moodle
-	 * connection.
+	 * Constructor of the Service. Loads the database values from a property file
+	 * and initiates values for a moodle connection.
 	 *
 	 */
 	public MoodleDataProxyService() {
@@ -164,45 +164,12 @@ public class MoodleDataProxyService extends RESTService {
 	}
 
 	/**
-	 * A function that is called by the user to send processed moodle to a mobsos data processing instance.
+	 * Thread which periodically checks all courses for new quiz attempts,
+	 * creates xAPI statements of new attempts and sends them to Mobsos.
 	 *
-	 * @param courseId an integer indicating the id of a moodle course
-	 *
-	 * @return a response message if everything went ok
+	 * @return void
 	 *
 	 */
-	@Deprecated
-	public boolean submitDataForCourse(int courseId) {
-
-		String gradeReport = "";
-		String userInfo = "";
-		String quizzes = "";
-		String courses = "";
-		ArrayList<String> newStatements;
-
-		// Getting the moodle data
-		try {
-			gradeReport = moodle.gradereport_user_get_grade_items(courseId);
-			userInfo = moodle.core_enrol_get_enrolled_users(courseId);
-			quizzes = moodle.mod_quiz_get_quizzes_by_courses(courseId);
-			courses = moodle.core_course_get_courses();
-			newStatements = moodle.statementGenerator(gradeReport, userInfo, quizzes, courses);
-
-			MoodleDataProxyService.oldCourseStatements.put(courseId, newStatements);
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
-		} catch (JSONException e1) {
-			e1.printStackTrace();
-			return false;
-		}
-
-		for (String statement : newStatements) {
-			context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, statement);
-		}
-		return true;
-	}
-
 	private class DataStreamThread implements Runnable {
 		@Override
 		public void run() {
@@ -213,6 +180,7 @@ public class MoodleDataProxyService extends RESTService {
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			Instant instant = timestamp.toInstant();
 			long now = instant.getEpochSecond();
+
 			for (Integer courseId : courseList) {
 				try {
 					String userInfoRaw = moodle.core_enrol_get_enrolled_users(courseId);
@@ -220,45 +188,41 @@ public class MoodleDataProxyService extends RESTService {
 					String userGradesObjectRaw = moodle.gradereport_user_get_grade_items(courseId);
 					JSONObject userGradesObject = new JSONObject(userGradesObjectRaw);
 					JSONArray userGrades = userGradesObject.getJSONArray("usergrades");
+
 					for (Object o : userGrades) {
 						JSONObject uGrades = (JSONObject) o;
 						MoodleUserData moodleUserData = moodle.getMoodleUserData(jsonUserInfo, uGrades);
 						JSONArray gradeItems = uGrades.getJSONArray("gradeitems");
+
 						for (Object gradeItemObject : gradeItems) {
 							JSONObject gradeItem = (JSONObject) gradeItemObject;
 							MoodleUserGradeItem gItem = gson.fromJson(gradeItem.toString(), MoodleUserGradeItem.class);
 							gItem.setCourseid(uGrades.getInt("courseid"));
+
 							if (gItem.getGradedategraded() != null && gItem.getGradedategraded() > lastChecked) {
 								// Get duration for quiz
 								if (gItem.getItemtype().equals("quiz")) {
-									String quizReviewRaw = moodle.mod_quiz_get_attempt_review(gItem.getId());
-									JSONObject quizReview = new JSONObject(quizReviewRaw);
+									JSONObject quizReview = new JSONObject(moodle.mod_quiz_get_attempt_review(gItem.getId()));
 									JSONObject quizReviewAttempt = quizReview.getJSONObject("attempt");
 									long start = quizReviewAttempt.getLong("timestart");
 									long finish = quizReviewAttempt.getLong("timefinish");
 									gItem.setDuration(finish - start);
-									context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,
-											xAPIStatements.createXAPIStatementGrades(moodleUserData, gItem,
-													moodle.getDomainName() + "*" + email + "*"));
-								} else if (gItem.getItemtype().equals("assign")) {
-									String assignSubmissionsRaw = moodle
-											.mod_assign_get_submissions(gItem.getIteminstance());
-									JSONArray assignSubmissions = new JSONArray(assignSubmissionsRaw);
+								}
+								else if (gItem.getItemtype().equals("assign")) {
+									JSONArray assignSubmissions = new JSONArray(
+										moodle.mod_assign_get_submissions(gItem.getIteminstance()));
 									MoodleAssignSubmission mas = moodle.getUserSubmission(assignSubmissions,
 											moodleUserData.getUserId());
 									long start = mas.getTimecreated();
 									long finish = mas.getTimemodified();
 									gItem.setDuration(finish - start);
-									context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,
-											xAPIStatements.createXAPIStatementGrades(moodleUserData, gItem,
-													moodle.getDomainName() + "*" + email + "*"));
 								}
-								else {
-									context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,
-											xAPIStatements.createXAPIStatementGrades(moodleUserData, gItem,
-													moodle.getDomainName() + "*" + email + "*"));
-								}
-								System.out.println("Item " + gItem.getId() + " graded");
+
+								context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,
+										xAPIStatements.createXAPIStatementGrades(moodleUserData, gItem,
+												moodle.getDomainName() + "*" + email + "*", moodle.getUserToken()));
+
+								System.out.println("INFO: New grading item " + gItem.getId());
 							}
 						}
 					}

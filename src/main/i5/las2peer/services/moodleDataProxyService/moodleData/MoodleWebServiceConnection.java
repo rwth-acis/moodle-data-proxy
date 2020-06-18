@@ -28,6 +28,7 @@ public class MoodleWebServiceConnection {
 	private static String token = null;
 	private static String domainName = null;
 	private static String restFormat = "&moodlewsrestformat=json";
+	private final static String TEST_TOKEN = "abcd1234";
 
 	/**
 	 * @param token access token for the moodle instance
@@ -44,7 +45,7 @@ public class MoodleWebServiceConnection {
 
 	/**
 	 * This function requests a Rest function to the initiated moodle web server.
-	 * 
+	 *
 	 * @param functionName This the function name for the moodle rest request.
 	 * @param urlParameters These are the parameters in one String for the moodle rest request.
 	 * @return Returns the output of the moodle rest request.
@@ -102,7 +103,7 @@ public class MoodleWebServiceConnection {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
 		return restRequest("core_enrol_get_enrolled_users", urlParameters);
 	}
-	
+
 	/**
 	 * @return site information and current user information
 	 * @throws IOException if an I/O exception occurs.
@@ -110,7 +111,7 @@ public class MoodleWebServiceConnection {
 	public String core_webservice_get_site_info() throws IOException {
 		return restRequest("core_webservice_get_site_info", "");
 	}
-	
+
 	/**
 	 * @param field which should be checked
 	 * @param value of the field
@@ -122,11 +123,11 @@ public class MoodleWebServiceConnection {
 		urlParameters += "&values[0]=" + URLEncoder.encode(Integer.toString(value), "UTF-8");
 		return restRequest("core_user_get_users_by_field", urlParameters);
 	}
-	
+
 
 	/**
 	 * @param courseId id of the course you want to have updates
-	 * @param since long containing the unix timestamp 
+	 * @param since long containing the unix timestamp
 	 * @return updates since given timestamp
 	 * @throws IOException if an I/O exception occurs.
 	 */
@@ -356,6 +357,7 @@ public class MoodleWebServiceConnection {
 	 */
 	private ArrayList<String> statementGeneratorGetGrades(int index, JSONArray jsonGradeItems, JSONArray jsonQuizzes,
 			MoodleUserData moodleUserData, ArrayList<String> statements, MoodleUserGradeItem moodleUserGradeItem) {
+
 		String itemName = null;
 		Integer itemId = null;
 		String itemModule = null;
@@ -385,7 +387,7 @@ public class MoodleWebServiceConnection {
 			/*
 			Date date = new Date();
 			date.setTime(jsonItem.getLong("gradedatesubmitted") * 1000);
-			
+
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 			gradeDateSubmitted = sdf.format(date) + "Z";
 			*/
@@ -426,7 +428,7 @@ public class MoodleWebServiceConnection {
 
 		// Creating xAPI Statements
 		if (percentageFormatted != null) {
-			statements = xAPIStatements.createXAPIStatements(moodleUserData, statements, domainName);
+			statements = xAPIStatements.createXAPIStatements(moodleUserData, statements, domainName, getUserToken());
 		}
 		return statements;
 	}
@@ -499,5 +501,9 @@ public class MoodleWebServiceConnection {
 			}
 		}
 		return null; // not found :(
+	}
+
+	public String getUserToken() {
+			return TEST_TOKEN;
 	}
 }

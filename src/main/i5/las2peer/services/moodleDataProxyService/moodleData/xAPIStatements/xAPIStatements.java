@@ -1,9 +1,7 @@
 package i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements;
 
 import java.util.ArrayList;
-
 import org.json.JSONObject;
-
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserData;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserGradeItem;
 
@@ -35,7 +33,7 @@ public class xAPIStatements {
 	}
 
 	public static ArrayList<String> createXAPIStatements(MoodleUserData moodleUserData, ArrayList<String> statements,
-			String domainName) {
+			String domainName, String userToken) {
 		JSONObject actor = createActor(moodleUserData, domainName);
 
 		// verb
@@ -99,19 +97,19 @@ public class xAPIStatements {
 		// can be changed according to the setting
 		result.put("success", true);
 
-		JSONObject statement = new JSONObject();
-		statement.put("actor", actor);
-		statement.put("verb", verb);
-		statement.put("object", object);
-		statement.put("result", result);
-		statement.put("timestamp", moodleUserData.getMoodleUserGradeItem().getGradedatesubmitted());
-
-		statements.add(statement.toString());
-		return statements;
+    JSONObject statement = new JSONObject();
+    statement.put("actor", actor);
+    statement.put("verb", verb);
+    statement.put("object", object);
+    statement.put("result", result);
+    statement.put("timestamp", moodleUserData.getMoodleUserGradeItem()
+      .getGradedatesubmitted());
+    statements.add(statement.toString() + "*" + userToken + "*" );
+    return statements;
 	}
 
 	public static String createXAPIStatementGrades(MoodleUserData moodleUserData, MoodleUserGradeItem gItem,
-			String domainName) {
+			String domainName, String userToken) {
 		JSONObject actor = createActor(moodleUserData, domainName);
 
 		// verb
@@ -175,13 +173,12 @@ public class xAPIStatements {
 		// can be changed according to the setting
 		result.put("success", true);
 
-		JSONObject statement = new JSONObject();
-		statement.put("actor", actor);
-		statement.put("verb", verb);
-		statement.put("object", object);
-		statement.put("result", result);
-		statement.put("timestamp", gItem.getGradedatesubmitted());
-
-		return statement.toString();
+    JSONObject statement = new JSONObject();
+    statement.put("actor", actor);
+    statement.put("verb", verb);
+    statement.put("object", object);
+    statement.put("result", result);
+    statement.put("timestamp", gItem.getGradedatesubmitted());
+    return (statement.toString() + "*" + userToken + "*") ;
 	}
 }
