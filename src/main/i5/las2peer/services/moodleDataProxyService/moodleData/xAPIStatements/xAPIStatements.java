@@ -11,13 +11,12 @@ public class xAPIStatements {
 		JSONObject actor = new JSONObject();
 		// Actor
 		actor.put("objectType", "Agent");
-		actor.put("mbox", "mailto:" + moodleUserData.getEmail());
 		actor.put("name", moodleUserData.getUserFullName());
 
 		// Account -- new object based on the latest xAPI validation
 		JSONObject account = new JSONObject();
-		account.put("name", moodleUserData.getUserFullName());
-		account.put("homepage", domainName);
+		account.put("name", moodleUserData.getEmail());
+		account.put("homePage", domainName);
 		actor.put("account", account);
 		return actor;
 	}
@@ -104,12 +103,12 @@ public class xAPIStatements {
     statement.put("result", result);
     statement.put("timestamp", moodleUserData.getMoodleUserGradeItem()
       .getGradedatesubmitted());
-    statements.add(statement.toString() + "*" + userToken + "*" );
+		statements.add(statements.toString());
     return statements;
 	}
 
 	public static String createXAPIStatementGrades(MoodleUserData moodleUserData, MoodleUserGradeItem gItem,
-			String domainName, String userToken) {
+			String domainName) {
 		JSONObject actor = createActor(moodleUserData, domainName);
 
 		// verb
@@ -155,7 +154,7 @@ public class xAPIStatements {
 			// needs to be updated
 			result.put("duration", "P" + duration + "D");
 		} catch (Exception e) {
-			result.put("duration", "undefined");
+			result.put("duration", "PT0S");
 		}
 
 		// Score -- new object based on the latest xAPI validation
@@ -179,6 +178,6 @@ public class xAPIStatements {
     statement.put("object", object);
     statement.put("result", result);
     statement.put("timestamp", gItem.getGradedatesubmitted());
-    return (statement.toString() + "*" + userToken + "*") ;
+    return statement.toString();
 	}
 }

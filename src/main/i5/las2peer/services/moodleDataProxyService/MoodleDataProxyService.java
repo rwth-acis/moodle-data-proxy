@@ -32,6 +32,7 @@ import i5.las2peer.api.ManualDeployment;
 import i5.las2peer.api.logging.MonitoringEvent;
 import i5.las2peer.api.security.AnonymousAgent;
 import i5.las2peer.logging.L2pLogger;
+import java.util.logging.Level;
 import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.security.UserAgentImpl;
@@ -99,6 +100,7 @@ public class MoodleDataProxyService extends RESTService {
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			Instant instant = timestamp.toInstant();
 			lastChecked = instant.getEpochSecond();
+			L2pLogger.setGlobalConsoleLevel(Level.INFO);
 		}
 
 		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
@@ -140,18 +142,18 @@ public class MoodleDataProxyService extends RESTService {
 			value = { @ApiResponse(
 					code = HttpURLConnection.HTTP_OK,
 					message = "Moodle connection is initiaded") })
-	@RolesAllowed("authenticated")
+//	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		}
+		// if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+		// 	return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		// }
 
-		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
-		String email = u.getEmail();
-
-		if (!email.equals(email)) {
-			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-		}
+		// UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
+		// String email = u.getEmail();
+		//
+		// if (!email.equals(email)) {
+		// 	return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		// }
 		if (dataStreamThread == null) {
 			context = Context.get();
 			dataStreamThread = Executors.newSingleThreadScheduledExecutor();
@@ -220,9 +222,9 @@ public class MoodleDataProxyService extends RESTService {
 
 								context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,
 										xAPIStatements.createXAPIStatementGrades(moodleUserData, gItem,
-												moodle.getDomainName() + "*" + email + "*", moodle.getUserToken()));
+												moodle.getDomainName()) + '*' + moodle.getUserToken());
 
-								System.out.println("INFO: New grading item " + gItem.getId());
+								logger.info("New grading item " + gItem.getId());
 							}
 						}
 					}
