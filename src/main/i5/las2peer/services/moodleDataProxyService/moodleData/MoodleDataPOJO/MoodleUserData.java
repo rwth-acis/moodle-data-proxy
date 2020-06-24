@@ -1,8 +1,11 @@
 package i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO;
 
-public class MoodleUserData {
+import org.json.JSONObject;
+
+public class MoodleUserData extends MoodleDataPOJO {
 
 	private String email;
+	private final String moodleDomain;
 	private String userFullName;
 	private Integer courseId;
 	private String quizSummary;
@@ -11,6 +14,14 @@ public class MoodleUserData {
 	private String courseName;
 	private MoodleUserGradeItem moodleUserGradeItem;
 	private MoodleCourse moodleCourse;
+
+	public MoodleUserData(JSONObject userdata, String moodleDomain) {
+    this.moodleDomain = moodleDomain;
+  }
+
+	public String getDomainName() {
+		return moodleDomain;
+	}
 
 	public String getEmail() {
 		return email;

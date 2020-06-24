@@ -1,6 +1,6 @@
 package i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO;
 
-public class MoodleAssignSubmission {
+public class MoodleAssignSubmission extends MoodleDataPOJO {
 	private int id;
 	private int userid;
 	private long timecreated;

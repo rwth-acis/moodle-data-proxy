@@ -1,6 +1,6 @@
 package i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO;
 
-public class MoodleUserGradeItem {
+public class MoodleUserGradeItem extends MoodleDataPOJO {
 
 	private Integer id;
 	private Integer courseid;

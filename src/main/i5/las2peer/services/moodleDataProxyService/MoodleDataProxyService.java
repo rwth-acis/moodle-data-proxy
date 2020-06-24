@@ -71,14 +71,12 @@ public class MoodleDataProxyService extends RESTService {
 	private String moodleDomain;
 	private String moodleToken;
 
-	private static MoodleWebServiceConnection moodle;
+	private static HashSet<Integer> courseList = new HashSet<Integer>();
 	private static ScheduledExecutorService dataStreamThread = null;
 
 	private final static int MOODLE_DATA_STREAM_PERIOD = 60; // Every minute
 	private static long lastChecked = 0;
-	private static HashSet<Integer> courseList = new HashSet<Integer>();
 
-	private static Map<Integer, ArrayList<String>> oldCourseStatements = new HashMap<Integer, ArrayList<String>>();
 
 	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataProxyService.class.getName());
 
@@ -93,17 +91,17 @@ public class MoodleDataProxyService extends RESTService {
 	 *
 	 */
 	public MoodleDataProxyService() {
-		setFieldValues(); // This sets the values of the configuration file
+		/*setFieldValues(); // This sets the values of the configuration file
 		if (lastChecked == 0) {
 			// Get current time
 			TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			Instant instant = timestamp.toInstant();
 			lastChecked = instant.getEpochSecond();
-			L2pLogger.setGlobalConsoleLevel(Level.INFO);
+			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
 		}
 
-		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
+		MoodleWebServiceConnection moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
 
 		if (email.equals("")) {
 			try {
@@ -172,7 +170,7 @@ public class MoodleDataProxyService extends RESTService {
 	 * @return void
 	 *
 	 */
-	private class DataStreamThread implements Runnable {
+/*	private class DataStreamThread implements Runnable {
 		@Override
 		public void run() {
 			Gson gson = new Gson();
@@ -180,19 +178,16 @@ public class MoodleDataProxyService extends RESTService {
 
 			// Get current time
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-			Instant instant = timestamp.toInstant();
-			long now = instant.getEpochSecond();
+			long now = timestamp.toInstant().getEpochSecond();
 
 			for (Integer courseId : courseList) {
 				try {
-					String userInfoRaw = moodle.core_enrol_get_enrolled_users(courseId);
-					JSONArray jsonUserInfo = new JSONArray(userInfoRaw);
-					String userGradesObjectRaw = moodle.gradereport_user_get_grade_items(courseId);
-					JSONObject userGradesObject = new JSONObject(userGradesObjectRaw);
+					JSONArray jsonUserInfo = new JSONArray(moodle.core_enrol_get_enrolled_users(courseId));
+					JSONObject userGradesObject = new JSONObject(moodle.gradereport_user_get_grade_items(courseId));
 					JSONArray userGrades = userGradesObject.getJSONArray("usergrades");
 
-					for (Object o : userGrades) {
-						JSONObject uGrades = (JSONObject) o;
+					for (Object uGradesObject : userGrades) {
+						JSONObject uGrades = (JSONObject) uGradesObject;
 						MoodleUserData moodleUserData = moodle.getMoodleUserData(jsonUserInfo, uGrades);
 						JSONArray gradeItems = uGrades.getJSONArray("gradeitems");
 
@@ -202,6 +197,7 @@ public class MoodleDataProxyService extends RESTService {
 							gItem.setCourseid(uGrades.getInt("courseid"));
 
 							if (gItem.getGradedategraded() != null && gItem.getGradedategraded() > lastChecked) {
+
 								// Get duration for quiz
 								if (gItem.getItemtype().equals("quiz")) {
 									JSONObject quizReview = new JSONObject(moodle.mod_quiz_get_attempt_review(gItem.getId()));
@@ -236,7 +232,9 @@ public class MoodleDataProxyService extends RESTService {
 			}
 
 			lastChecked = now;
-		}
+		}*/
 	}
+
+//	private void
 
 }

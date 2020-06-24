@@ -1,6 +1,6 @@
 package i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO;
 
-public class MoodleCourse {
+public class MoodleCourse extends MoodleDataPOJO {
 
     private int courseId;
     private String courseName;
