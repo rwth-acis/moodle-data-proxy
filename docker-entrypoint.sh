@@ -26,6 +26,7 @@ function set_in_service_config {
 }
 set_in_service_config moodleDomain ${MOODLE_DOMAIN}
 set_in_service_config moodleToken ${MOODLE_TOKEN}
+set_in_service_config courseIdList ${COURSE_LIST}
 
 
 # wait for any bootstrap host to be available
@@ -70,7 +71,7 @@ echo external_address = $(curl -s https://ipinfo.io/ip):${LAS2PEER_PORT} > etc/p
 if [[ -z "${@}" ]]
 then
     if [ -n "$LAS2PEER_ETH_HOST" ]; then
-        exec ${LAUNCH_COMMAND} --observer --ethereum-mnemonic "$(selectMnemonic)" uploadStartupDirectory startService\("'""${SERVICE}""'"\) startWebConnector "node=getNodeAsEthereumNode()" "registry=node.getRegistryClient()" "n=getNodeAsEthereumNode()" "r=n.getRegistryClient()" 
+        exec ${LAUNCH_COMMAND} --observer --ethereum-mnemonic "$(selectMnemonic)" uploadStartupDirectory startService\("'""${SERVICE}""'"\) startWebConnector "node=getNodeAsEthereumNode()" "registry=node.getRegistryClient()" "n=getNodeAsEthereumNode()" "r=n.getRegistryClient()"
     else
         exec ${LAUNCH_COMMAND} --observer uploadStartupDirectory startService\("'""${SERVICE}""'"\) startWebConnector
     fi

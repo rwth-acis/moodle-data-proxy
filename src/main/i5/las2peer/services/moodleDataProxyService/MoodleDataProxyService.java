@@ -70,6 +70,7 @@ public class MoodleDataProxyService extends RESTService {
 
 	private String moodleDomain;
 	private String moodleToken;
+	private String courseIdList;
 
 	private static MoodleWebServiceConnection moodle;
 	private static ScheduledExecutorService dataStreamThread = null;
@@ -118,19 +119,38 @@ public class MoodleDataProxyService extends RESTService {
 				e.printStackTrace();
 			}
 		}
+		getCourseIds();
+	}
 
+	private void getCourseIds() {
 		if (courseList == null || courseList.isEmpty()) {
-			try {
-				String courses = moodle.core_course_get_courses();
-				JSONArray jsonCourse = new JSONArray(courses);
-				courseList = new HashSet<Integer>();
-				for (Object o : jsonCourse) {
-					JSONObject course = (JSONObject) o;
-					courseList.add(course.getInt("id"));
+			if (courseIdList != null && courseIdList.length() > 0) {
+				try {
+					logger.info("Reading courses from provided list.");
+					String[] idStrings = courseIdList.split(",");
+					for (String courseid : idStrings) {
+						courseList.add(Integer.parseInt(courseid));
+					}
+				} catch (Exception e) {
+					logger.log(Level.SEVERE, "Reading course list failed", e);
+					e.printStackTrace();
+					return;
 				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			}
+			else {
+				try {
+					logger.info("Getting courses from Moodle.");
+					String courses = moodle.core_course_get_courses();
+					JSONArray jsonCourse = new JSONArray(courses);
+					courseList = new HashSet<Integer>();
+					for (Object o : jsonCourse) {
+						JSONObject course = (JSONObject) o;
+						courseList.add(course.getInt("id"));
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 	}
