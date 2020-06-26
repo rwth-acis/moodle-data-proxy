@@ -98,10 +98,11 @@ public class MoodleDataProxyService extends RESTService {
 		if (lastChecked == 0) {
 			// Get current time
 			TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			// current timestamp minus one day
+			Timestamp timestamp = new Timestamp(System.currentTimeMillis() - 86400000);
 			Instant instant = timestamp.toInstant();
 			lastChecked = instant.getEpochSecond();
-			L2pLogger.setGlobalConsoleLevel(Level.INFO);
+			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
 		}
 
 		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
@@ -126,20 +127,20 @@ public class MoodleDataProxyService extends RESTService {
 		if (courseList == null || courseList.isEmpty()) {
 			if (courseIdList != null && courseIdList.length() > 0) {
 				try {
-					logger.info("Reading courses from provided list.");
+					logger.warning("Reading courses from provided list.");
 					String[] idStrings = courseIdList.split(",");
 					for (String courseid : idStrings) {
 						courseList.add(Integer.parseInt(courseid));
 					}
 				} catch (Exception e) {
-					logger.log(Level.SEVERE, "Reading course list failed", e);
+					logger.severe("Reading course list failed!");
 					e.printStackTrace();
 					return;
 				}
 			}
 			else {
 				try {
-					logger.info("Getting courses from Moodle.");
+					logger.warning("Getting courses from Moodle.");
 					String courses = moodle.core_course_get_courses();
 					JSONArray jsonCourse = new JSONArray(courses);
 					courseList = new HashSet<Integer>();
@@ -205,6 +206,7 @@ public class MoodleDataProxyService extends RESTService {
 
 			for (Integer courseId : courseList) {
 				try {
+					logger.warning("Getting updates for course " + courseId);
 					String userInfoRaw = moodle.core_enrol_get_enrolled_users(courseId);
 					JSONArray jsonUserInfo = new JSONArray(userInfoRaw);
 					String userGradesObjectRaw = moodle.gradereport_user_get_grade_items(courseId);
@@ -244,7 +246,7 @@ public class MoodleDataProxyService extends RESTService {
 										xAPIStatements.createXAPIStatementGrades(moodleUserData, gItem,
 												moodle.getDomainName()) + '*' + moodle.getUserToken());
 
-								logger.info("New grading item " + gItem.getId());
+								logger.warning("New grading item " + gItem.getId());
 							}
 						}
 					}
