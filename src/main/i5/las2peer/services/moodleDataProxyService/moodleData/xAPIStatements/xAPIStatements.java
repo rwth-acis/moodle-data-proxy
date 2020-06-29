@@ -5,21 +5,21 @@ import org.json.JSONObject;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDataPOJO;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodlePost;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDiscussion;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserData;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUser;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserGradeItem;
 
 public class xAPIStatements {
 
-	public static JSONObject createActor(MoodleUserData moodleUserData) {
+	public static JSONObject createActor(MoodleUser moodleUser, String moodleDomain) {
 		JSONObject actor = new JSONObject();
 		// Actor
 		actor.put("objectType", "Agent");
-		actor.put("name", moodleUserData.getUserFullName());
+		actor.put("name", moodleUser.getFullname());
 
 		// Account -- new object based on the latest xAPI validation
 		JSONObject account = new JSONObject();
-		account.put("name", moodleUserData.getEmail());
-		account.put("homePage", moodleUserData.getDomainName());
+		account.put("name", moodleUser.getEmail());
+		account.put("homePage", moodleDomain);
 		actor.put("account", account);
 		return actor;
 	}
@@ -53,21 +53,21 @@ public class xAPIStatements {
 		return verbObj;
 	}
 
-	public static ArrayList<String> createXAPIStatement(MoodleUserData moodleUser,
-		String activity, MoodleDataPOJO moodleModule) {
-		JSONObject actor = createActor(moodleUser);
+	public static String createXAPIStatement(MoodleUser moodleUser,
+		String activity, MoodleDataPOJO moodleModule, String moodleDomain) {
+		JSONObject actor = createActor(moodleUser, moodleDomain);
 
 		// verb
 		JSONObject verb = createVerb(activity);
 
 		// object
-		JSONObject object = createObject(moodleModule);
+		JSONObject object = createObject(moodleModule, moodleDomain);
 
-		// result
+/*		// result
 		JSONObject result = new JSONObject();
 		result.put("completion", true);
 
-		/*if (moodleUserData.getMoodleUserGradeItem().getFeedback() != null) {
+		if (moodleUserData.getMoodleUserGradeItem().getFeedback() != null) {
 			result.put("response", moodleUserData.getMoodleUserGradeItem().getFeedback());
 		}
 
@@ -102,11 +102,15 @@ public class xAPIStatements {
       .getGradedatesubmitted());
 		statements.add(statements.toString());
     return statements; */
-		return null;
+		JSONObject statement = new JSONObject();
+		statement.put("actor", actor);
+		statement.put("verb", verb);
+		statement.put("object", object);
+		return statement.toString();
 	}
 
-	private static JSONObject createObject(MoodleUserGradeItem gItem) {
-/*		object.put("id", domainName + "/mod/" + gItem.getItemmodule()
+/*	private static JSONObject createObject(MoodleUserGradeItem gItem) {
+		object.put("id", domainName + "/mod/" + gItem.getItemmodule()
 				+ "/view.php?id=" + gItem.getId());
 
 		JSONObject definition = new JSONObject();
@@ -130,19 +134,66 @@ public class xAPIStatements {
 		definition.put("interactionType", "other");
 
 		object.put("definition", definition);
-		object.put("objectType", "Activity"); */
+		object.put("objectType", "Activity");
 		return null;
-	}
+	}*/
 
-	private static JSONObject createObject(MoodleDataPOJO moduleData) {
-		// todo
+	private static JSONObject createObject(MoodleDataPOJO moduleData, String domainName) {
 		if (moduleData instanceof MoodlePost)
-			return null;
+			return createPost((MoodlePost) moduleData, domainName);
 		else if (moduleData instanceof MoodleDiscussion)
-			return null;
+			return createDiscussion((MoodleDiscussion) moduleData, domainName);
 		return null;
 	}
 
+	private static JSONObject createDiscussion(MoodleDiscussion discussionData, String domainName) {
+		JSONObject object = new JSONObject();
+		object.put("id", domainName + "/mod/forum/discuss.php?d=" + discussionData.getDiscussion());
+
+		JSONObject definition = new JSONObject();
+		definition.put("type", "http://id.tincanapi.com/activitytype/discussion");
+
+		JSONObject name = new JSONObject();
+		name.put("en-US", discussionData.getSubject());
+		definition.put("name", name);
+
+		JSONObject description = new JSONObject();
+		description.put("en-US", discussionData.getMessage());
+
+		definition.put("description", description);
+
+		// definition.interactionType -- new property based on the latest xAPI validation
+		definition.put("interactionType", "other");
+
+		object.put("definition", definition);
+		object.put("objectType", "Activity");
+		return object;
+	}
+
+	private static JSONObject createPost(MoodlePost postData, String domainName) {
+		JSONObject object = new JSONObject();
+		object.put("id", domainName + "/mod/forum/discuss.php?d=" +
+			postData.getDiscussionid() + "#p" + postData.getId());
+
+		JSONObject definition = new JSONObject();
+		definition.put("type", "http://id.tincanapi.com/activitytype/forum-reply");
+
+		JSONObject name = new JSONObject();
+		name.put("en-US", postData.getSubject());
+		definition.put("name", name);
+
+		JSONObject description = new JSONObject();
+		description.put("en-US", postData.getMessage());
+
+		definition.put("description", description);
+
+		// definition.interactionType -- new property based on the latest xAPI validation
+		definition.put("interactionType", "other");
+
+		object.put("definition", definition);
+		object.put("objectType", "Activity");
+		return object;
+	}
 /*	public static String createXAPIStatementGrades(MoodleUserData moodleUserData, MoodleUserGradeItem gItem,
 			String domainName) {
 		JSONObject actor = createActor(moodleUserData, domainName);

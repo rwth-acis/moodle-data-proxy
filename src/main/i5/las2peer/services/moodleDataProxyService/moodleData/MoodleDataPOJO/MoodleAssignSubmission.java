@@ -6,14 +6,6 @@ public class MoodleAssignSubmission extends MoodleDataPOJO {
 	private long timecreated;
 	private long timemodified;
 
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
 	public int getUserid() {
 		return userid;
 	}
