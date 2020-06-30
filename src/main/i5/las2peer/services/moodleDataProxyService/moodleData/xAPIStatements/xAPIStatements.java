@@ -1,14 +1,19 @@
 package i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements;
 
 import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import org.json.JSONObject;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDataPOJO;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodlePost;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDiscussion;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUser;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserGradeItem;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleGrade;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleExercise;
+import i5.las2peer.logging.L2pLogger;
 
 public class xAPIStatements {
+	private final static L2pLogger logger = L2pLogger.getInstance("Logger");
 
 	public static JSONObject createActor(MoodleUser moodleUser, String moodleDomain) {
 		JSONObject actor = new JSONObject();
@@ -43,6 +48,12 @@ public class xAPIStatements {
 			case "received":
 				id = "https://w3id.org/xapi/dod-isd/verbs/received";
 				break;
+			case "answered":
+				id = "https://w3id.org/xapi/dod-isd/verbs/answered";
+				break;
+			case "completed":
+				id = "https://w3id.org/xapi/dod-isd/verbs/completed";
+				break;
 		}
 
 		JSONObject verbObj = new JSONObject();
@@ -54,7 +65,34 @@ public class xAPIStatements {
 	}
 
 	public static String createXAPIStatement(MoodleUser moodleUser,
-		String activity, MoodleDataPOJO moodleModule, String moodleDomain) {
+			String activity, MoodleDataPOJO moodleModule, String moodleDomain) {
+		return createBasicXAPI(moodleUser, activity, moodleModule, moodleDomain,
+				moodleModule.getCreated()).toString();
+	}
+
+	public static String createXAPIStatement(MoodleUser moodleUser,
+			String activity, MoodleExercise moodleExercise, long submitted,
+			String moodleDomain) {
+		return createBasicXAPI(moodleUser, activity, moodleExercise, moodleDomain,
+				submitted).toString();
+	}
+
+	public static String createXAPIStatement(MoodleUser moodleUser,
+			String activity, MoodleExercise moodleExercise, MoodleGrade gradeData,
+			String moodleDomain) {
+		JSONObject statement = createBasicXAPI(moodleUser, activity, moodleExercise,
+				moodleDomain, gradeData.getCreated());
+
+		// result
+		JSONObject result = createResult(gradeData, moodleExercise.getGradepass());
+
+		statement.put("result", result);
+		return statement.toString();
+	}
+
+	private static JSONObject createBasicXAPI(MoodleUser moodleUser,
+			String activity, MoodleDataPOJO moodleModule, String moodleDomain,
+			long age) {
 		JSONObject actor = createActor(moodleUser, moodleDomain);
 
 		// verb
@@ -63,86 +101,26 @@ public class xAPIStatements {
 		// object
 		JSONObject object = createObject(moodleModule, moodleDomain);
 
-/*		// result
-		JSONObject result = new JSONObject();
-		result.put("completion", true);
+		// timestamp
+		LocalDateTime dateObj = LocalDateTime.ofEpochSecond(
+				age, 0, ZoneOffset.UTC);
+		String timestamp = dateObj.toString() + "Z";
 
-		if (moodleUserData.getMoodleUserGradeItem().getFeedback() != null) {
-			result.put("response", moodleUserData.getMoodleUserGradeItem().getFeedback());
-		}
-
-		int duration = moodleUserData.getMoodleCourse().getDuration();
-		// needs to be updated
-		result.put("duration", "P" + duration + "D");
-
-		// Score -- new object based on the latest xAPI validation
-		JSONObject score = new JSONObject();
-		score.put("min", moodleUserData.getMoodleUserGradeItem().getGrademin());
-		score.put("max", moodleUserData.getMoodleUserGradeItem().getGrademax());
-		score.put("raw", moodleUserData.getMoodleUserGradeItem().getGraderaw());
-
-		// Scale Calculation raw/max
-		double scaled = moodleUserData.getMoodleUserGradeItem().getGrademax() != 0
-				? (moodleUserData.getMoodleUserGradeItem().getGraderaw()
-						/ moodleUserData.getMoodleUserGradeItem().getGrademax())
-				: 0.0;
-		score.put("scaled", scaled);
-
-		result.put("score", score);
-
-		// can be changed according to the setting
-		result.put("success", true);
-
-    JSONObject statement = new JSONObject();
-    statement.put("actor", actor);
-    statement.put("verb", verb);
-    statement.put("object", object);
-    statement.put("result", result);
-    statement.put("timestamp", moodleUserData.getMoodleUserGradeItem()
-      .getGradedatesubmitted());
-		statements.add(statements.toString());
-    return statements; */
 		JSONObject statement = new JSONObject();
 		statement.put("actor", actor);
 		statement.put("verb", verb);
 		statement.put("object", object);
-		return statement.toString();
+		statement.put("timestamp", timestamp);
+		return statement;
 	}
-
-/*	private static JSONObject createObject(MoodleUserGradeItem gItem) {
-		object.put("id", domainName + "/mod/" + gItem.getItemmodule()
-				+ "/view.php?id=" + gItem.getId());
-
-		JSONObject definition = new JSONObject();
-		definition.put("type", domainName + "/course/view.php?id=" + moodleUserData.getCourseId());
-
-		JSONObject name = new JSONObject();
-		name.put("en-US", gItem.getItemname());
-		definition.put("name", name);
-
-		JSONObject description = new JSONObject();
-		if (moodleUserData.getQuizSummary() != null) {
-			description.put("en-US", "Course description: " + moodleUserData.getCourseSummary() + " \n Description: "
-					+ moodleUserData.getQuizSummary());
-		} else {
-			description.put("en-US", "Course description: " + moodleUserData.getCourseSummary());
-		}
-
-		definition.put("description", description);
-
-		// definition.interactionType -- new property based on the latest xAPI validation
-		definition.put("interactionType", "other");
-
-		object.put("definition", definition);
-		object.put("objectType", "Activity");
-		return null;
-	}*/
 
 	private static JSONObject createObject(MoodleDataPOJO moduleData, String domainName) {
 		if (moduleData instanceof MoodlePost)
 			return createPost((MoodlePost) moduleData, domainName);
 		else if (moduleData instanceof MoodleDiscussion)
 			return createDiscussion((MoodleDiscussion) moduleData, domainName);
+		else if (moduleData instanceof MoodleExercise)
+			return createExercise((MoodleExercise) moduleData, domainName);
 		return null;
 	}
 
@@ -194,31 +172,23 @@ public class xAPIStatements {
 		object.put("objectType", "Activity");
 		return object;
 	}
-/*	public static String createXAPIStatementGrades(MoodleUserData moodleUserData, MoodleUserGradeItem gItem,
-			String domainName) {
-		JSONObject actor = createActor(moodleUserData, domainName);
 
-		// verb
-		JSONObject verb = createVerb();
-
-		// object
+	private static JSONObject createExercise(MoodleExercise exerciseData, String domainName) {
 		JSONObject object = new JSONObject();
-		object.put("id", domainName + "/mod/" + gItem.getItemmodule() + "/view.php?id=" + gItem.getId());
+		object.put("id", domainName + "/mod/" + exerciseData.getModname() +
+			"/view.php?id=" + exerciseData.getId());
 
 		JSONObject definition = new JSONObject();
-		definition.put("type", domainName + "/course/view.php?id=" + gItem.getCourseid());
+		definition.put("type", "http://id.tincanapi.com/activitytype/school-assignment");
 
 		JSONObject name = new JSONObject();
-		name.put("en-US", gItem.getItemname());
+		name.put("en-US", exerciseData.getName());
 		definition.put("name", name);
 
 		JSONObject description = new JSONObject();
-		if (gItem.getItemname() != null) {
-			description.put("en-US", gItem.getItemname());
-		} else {
-			// TODO
-			description.put("en-US", "");
-		}
+		description.put("en-US", "A " + exerciseData.getModname() + " where students " +
+				"pass with a score of at least " + exerciseData.getGradepass() +
+				"/" + exerciseData.getGrade());
 
 		definition.put("description", description);
 
@@ -227,44 +197,34 @@ public class xAPIStatements {
 
 		object.put("definition", definition);
 		object.put("objectType", "Activity");
+		return object;
+	}
 
-		// result
+	private static JSONObject createResult(MoodleGrade gradeData, String gradepass) {
 		JSONObject result = new JSONObject();
 		result.put("completion", true);
-
-		if (gItem.getFeedback() != null) {
-			result.put("response", gItem.getFeedback());
-		}
-
-		try {
-			long duration = gItem.getDuration();
-			// needs to be updated
-			result.put("duration", "P" + duration + "D");
-		} catch (Exception e) {
-			result.put("duration", "PT0S");
-		}
+		result.put("response", gradeData.getFeedback());
 
 		// Score -- new object based on the latest xAPI validation
 		JSONObject score = new JSONObject();
-		score.put("min", gItem.getGrademin());
-		score.put("max", gItem.getGrademax());
-		score.put("raw", gItem.getGraderaw());
+		score.put("min", gradeData.getGrademin());
+		score.put("max", gradeData.getGrademax());
+		score.put("raw", gradeData.getGraderaw());
 
 		// Scale Calculation raw/max
-		double scaled = gItem.getGrademax() != 0 ? (gItem.getGraderaw() / gItem.getGrademax()) : 0.0;
+		double scaled = gradeData.getGrademax() != 0 ?
+				(gradeData.getGraderaw() / gradeData.getGrademax()) : 0.0;
 		score.put("scaled", scaled);
-
 		result.put("score", score);
 
-		// can be changed according to the setting
-		result.put("success", true);
+		try {
+			float passingGrade = Float.parseFloat(gradepass);
+			boolean passed = gradeData.getGraderaw() >= passingGrade;
+			result.put("success", passed);
+		} catch (Exception e) {
+			logger.warning("Cannot convert " + gradepass + " to float");
+		}
 
-    JSONObject statement = new JSONObject();
-    statement.put("actor", actor);
-    statement.put("verb", verb);
-    statement.put("object", object);
-    statement.put("result", result);
-    statement.put("timestamp", gItem.getGradedatesubmitted());
-    return statement.toString();
-	} */
+		return result;
+	}
 }

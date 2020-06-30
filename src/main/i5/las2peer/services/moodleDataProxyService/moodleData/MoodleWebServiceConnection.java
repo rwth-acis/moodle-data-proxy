@@ -18,11 +18,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleAssignSubmission;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleCourse;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserGradeItem;
-import i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements.xAPIStatements;
-
 public class MoodleWebServiceConnection {
 	private static String token = null;
 	private static String domainName = null;
@@ -163,9 +158,11 @@ public class MoodleWebServiceConnection {
 	 * @return submissions for given id.
 	 * @throws IOException if an I/O exception occurs.
 	 */
-	public JSONObject mod_assign_get_submissions(int assignmentId) throws IOException {
+	public JSONArray mod_assign_get_submissions(int assignmentId) throws IOException {
 		String urlParameters = "assignmentids[0]=" + URLEncoder.encode(Integer.toString(assignmentId), "UTF-8");
-		return new JSONObject(restRequest("mod_assign_get_submissions", urlParameters));
+		JSONObject submissionJSON = new JSONObject(restRequest("mod_assign_get_submissions", urlParameters));
+		submissionJSON = (JSONObject) ((JSONArray) submissionJSON.getJSONArray("assignments")).get(0);
+		return submissionJSON.getJSONArray("submissions");
 	}
 
 	/**
@@ -183,9 +180,10 @@ public class MoodleWebServiceConnection {
 	 * @return Returns grades for all users, who are enrolled in the specified course
 	 * @throws IOException if an I/O exception occurs.
 	 **/
-	public JSONObject gradereport_user_get_grade_items(int courseId) throws IOException {
+	public JSONArray gradereport_user_get_grade_items(int courseId) throws IOException {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
-		return new JSONObject(restRequest("gradereport_user_get_grade_items", urlParameters));
+		JSONObject reportJSON = new JSONObject(restRequest("gradereport_user_get_grade_items", urlParameters));
+		return reportJSON.getJSONArray("usergrades");
 	}
 
 	/**

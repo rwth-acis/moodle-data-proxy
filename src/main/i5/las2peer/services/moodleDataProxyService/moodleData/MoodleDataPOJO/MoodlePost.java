@@ -5,7 +5,6 @@ import org.json.JSONObject;
 public class MoodlePost extends MoodleDataPOJO {
 	private int discussionid;
 	private int userid;
-	private long timecreated;
 	private String subject;
 	private String message;
 
@@ -33,10 +32,10 @@ public class MoodlePost extends MoodleDataPOJO {
 		}
 		if (postData.isNull("timecreated")) {
 			logger.warning("Missing expected field timecreated for post " + this.id);
-			this.timecreated = 0;
+			this.created = 0;
 		}
 		else {
-			this.timecreated = postData.getLong("timecreated");
+			this.created = postData.getLong("timecreated");
 		}
 		if (postData.isNull("subject")) {
 			logger.warning("Missing expected field subject for post " + this.id);
@@ -70,12 +69,12 @@ public class MoodlePost extends MoodleDataPOJO {
 		this.discussionid = discussionid;
 	}
 
-	public long getTimecreated() {
-		return timecreated;
+	public long getCreated() {
+		return created;
 	}
 
-	public void setTimecreated(long timecreated) {
-		this.timecreated = timecreated;
+	public void setCreated(long created) {
+		this.created = created;
 	}
 
 	public String getSubject() {

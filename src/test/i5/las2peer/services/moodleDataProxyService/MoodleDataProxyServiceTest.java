@@ -14,6 +14,6 @@ public class MoodleDataProxyServiceTest {
     MoodleWebServiceConnection moodle = new MoodleWebServiceConnection("424f0b29c3d5944506ea9ca8b9dec502",
       "https://moodle.tech4comp.dbis.rwth-aachen.de");
     MoodleStatementGenerator statements = new MoodleStatementGenerator(moodle);
-    System.out.println(statements.courseUpdatesSince(10, 1592916812));
+    System.out.println(statements.courseUpdatesSince(10, 1592325873));
   }
 }

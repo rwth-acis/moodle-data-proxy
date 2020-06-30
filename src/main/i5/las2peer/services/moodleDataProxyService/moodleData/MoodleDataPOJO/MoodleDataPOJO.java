@@ -4,9 +4,14 @@ import i5.las2peer.logging.L2pLogger;
 
 public abstract class MoodleDataPOJO {
   protected int id;
+  protected long created;
   protected static L2pLogger logger = L2pLogger.getInstance("Logger");
 
   public int getId() {
     return this.id;
+  }
+
+  public long getCreated() {
+    return this.created;
   }
 }

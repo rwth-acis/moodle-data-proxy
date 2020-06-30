@@ -5,7 +5,6 @@ import org.json.JSONObject;
 public class MoodleDiscussion extends MoodleDataPOJO {
 	private int userid;
 	private int discussion;
-	private long created;
 	private long timemodified;
 	private String subject;
 	private String message;

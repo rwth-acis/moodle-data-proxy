@@ -22,12 +22,12 @@ import org.json.JSONObject;
 
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleWebServiceConnection;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDataPOJO;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleAssignSubmission;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleExercise;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleCourse;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDiscussion;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodlePost;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUser;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserGradeItem;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleGrade;
 import i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements.xAPIStatements;
 import i5.las2peer.logging.L2pLogger;
 import java.util.logging.Level;
@@ -38,7 +38,7 @@ public class MoodleStatementGenerator {
 
   private static Map<Integer, MoodleCourse> courseList = new HashMap<Integer, MoodleCourse>();
   private static Map<Integer, MoodleUser> userList = new HashMap<Integer, MoodleUser>();
-	private static Map<Integer, MoodleDataPOJO> modList = new HashMap<Integer, MoodleDataPOJO>();
+	private static Map<Integer, MoodleExercise> modList = new HashMap<Integer, MoodleExercise>();
 
   public MoodleStatementGenerator(MoodleWebServiceConnection moodle) {
     MoodleStatementGenerator.moodle = moodle;
@@ -62,31 +62,22 @@ public class MoodleStatementGenerator {
 	  JSONArray updates = moodle.core_course_get_updates_since(courseid, since);
 	  logger.info("Got updates:\n" + updates.toString());
 	  for (Object updateObject : updates) {
-		  int cmid = ((JSONObject) updateObject).getInt("id");
-		  JSONObject module = moodle.core_course_get_course_module(cmid);
-		  logger.info("Got module:\n" + module.toString());
+			JSONObject update = (JSONObject) updateObject;
+			for (Object updateInfoObj : update.getJSONArray("updates")) {
+		  	JSONObject updateInfo = (JSONObject) updateInfoObj;
 
-		 // add module to id list based on type
-			try {
-			  String modtype = module.getString("modname");
-				switch(modtype) {
-					case "forum":
-						forumids.add(module.getInt("instance"));
-						break;
-					case "assign":
-					  assignmentids.add(module.getInt("instance"));
-						break;
-					default:
-					  logger.warning("Unknown type " + modtype + " of module " + cmid + ". Ignoring!");
-						break;
+				// collect updates forums
+			  if (updateInfo.getString("name").compareTo("discussions") == 0) {
+					JSONObject module = moodle.core_course_get_course_module(update.getInt("id"));
+					logger.info("Got forum:\n" + module.toString());
+					forumids.add(module.getInt("instance"));
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
 			}
 		}
 
 		ArrayList<String> statements = getForumUpdates(forumids, since);
-		//statements.addAll(getAssignUpdates(assignmentids));
+		statements.addAll(getSubmissions(moodle.gradereport_user_get_grade_items(
+				courseid), since));
 
 		return statements;
 	}
@@ -97,8 +88,8 @@ public class MoodleStatementGenerator {
  	 * @return Returns an ArrayList of new discussions and discussion posts
 	 * @throws IOException if an I/O exception occurs.
  	 */
-  private static ArrayList<String> getForumUpdates(ArrayList<Integer> forumids, long since)
-		throws IOException {
+  private static ArrayList<String> getForumUpdates(ArrayList<Integer> forumids,
+			long since) throws IOException {
 		ArrayList<String> forumUpdates = new ArrayList<String>();
 		for (int forumid : forumids) {
 			JSONArray discussions = moodle.mod_forum_get_forum_discussions(forumid);
@@ -138,13 +129,46 @@ public class MoodleStatementGenerator {
   }
 
  	/**
- 	 * @param forumids Array of module ids which belong to recently updated
-	 * assignments
- 	 * @return Returns an ArrayList of new updates to assignments
+ 	 * @param gradeJSON JSON Array containing grading data for every user
+	 * @param since time of oldes changes to get included
+ 	 * @return Returns an ArrayList of new submissions and grades
+	 * @throws IOException if an I/O exception occurs.
  	 */
-  private static ArrayList<String> getAssignUpdates(ArrayList<Integer> assignmentids) {
-	  //TODO
-		return null;
+  private static ArrayList<String> getSubmissions(JSONArray gradeJSON, long since)
+			throws IOException {
+		ArrayList<String> submissions = new ArrayList<String>();
+		for (Object userObj : gradeJSON) {
+			JSONObject userReport = (JSONObject) userObj;
+			for (Object submissionObj : userReport.getJSONArray("gradeitems")) {
+				JSONObject submission = (JSONObject) submissionObj;
+
+				// add new submission
+				if (submission.isNull("gradedatesubmitted") ||
+						(submission.getLong("gradedatesubmitted") < since &&
+						submission.getLong("gradedategraded") < since)) {
+					continue;
+				}
+				logger.info("Got submission:\n" + submission.toString());
+				MoodleUser actor = getUser(userReport.getInt("userid"));
+				MoodleExercise assignment = getModule(submission.getInt("cmid"));
+
+				// add new grade
+				if (!submission.isNull("gradedategraded") &&
+						submission.getLong("gradedategraded") > since) {
+					MoodleGrade grade = new MoodleGrade(submission);
+					submissions.add(xAPIStatements.createXAPIStatement(
+						actor, "completed", assignment, grade, moodle.getDomainName()) +
+						"*" + actor.getMoodleToken());
+				}
+				else {
+					submissions.add(xAPIStatements.createXAPIStatement(
+						actor, "submitted", assignment,
+						submission.getLong("gradedatesubmitted"), moodle.getDomainName()) +
+						"*" + actor.getMoodleToken());
+				}
+			}
+ 		}
+		return submissions;
   }
 
  	/**
@@ -164,5 +188,35 @@ public class MoodleStatementGenerator {
 			userList.put(userid, user);
 		}
 		return user;
+  }
+
+ 	/**
+ 	 * @param cmid id of the module which information should be returned
+ 	 * @return Returns a MoodleModule object associated with given cmid
+	 * @throws IOException if an I/O exception occurs.
+ 	 */
+  private static MoodleExercise getModule(int cmid) throws IOException {
+		MoodleExercise module = modList.get(cmid);
+		if (module == null) {
+			JSONObject moduleJSON = moodle.core_course_get_course_module(cmid);
+			if (moduleJSON == null) {
+				logger.severe("Module " + cmid + " not found!");
+				return null;
+			}
+			switch (moduleJSON.getString("modname")) {
+				case "assign":
+					module = new MoodleExercise(moduleJSON);
+					break;
+				case "quiz":
+					module = new MoodleExercise(moduleJSON);
+					break;
+				default:
+					logger.severe("Unkown module type " + moduleJSON.getString("modname"));
+					return null;
+			}
+
+			modList.put(cmid, module);
+		}
+		return module;
   }
 }
