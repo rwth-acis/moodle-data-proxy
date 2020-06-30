@@ -112,7 +112,8 @@ public class MoodleStatementGenerator {
 					MoodleUser actor = getUser(creatorId);
 					MoodleDiscussion object = new MoodleDiscussion(discussion);
 					forumUpdates.add(xAPIStatements.createXAPIStatement(
-						actor, "posted", object, moodle.getDomainName()));
+						actor, "posted", object, moodle.getDomainName()) + "*" +
+						actor.getMoodleToken());
 				}
 
 				// add new posts
@@ -126,7 +127,8 @@ public class MoodleStatementGenerator {
 							MoodleUser actor = getUser(creatorId);
 							MoodlePost object = new MoodlePost(post);
 							forumUpdates.add(xAPIStatements.createXAPIStatement(
-								actor, "replied", object, moodle.getDomainName()));
+								actor, "replied", object, moodle.getDomainName()) + "*" +
+								actor.getMoodleToken());
 						}
 					}
 				}
