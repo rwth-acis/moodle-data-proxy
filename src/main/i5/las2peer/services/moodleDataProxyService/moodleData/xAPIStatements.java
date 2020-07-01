@@ -1,4 +1,4 @@
-package i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements;
+package i5.las2peer.services.moodleDataProxyService.moodleData;
 
 import java.util.ArrayList;
 import java.time.LocalDateTime;
@@ -13,7 +13,7 @@ import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.Moo
 import i5.las2peer.logging.L2pLogger;
 
 public class xAPIStatements {
-	private final static L2pLogger logger = L2pLogger.getInstance("Logger");
+	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataPOJO.class.getName());
 
 	public static JSONObject createActor(MoodleUser moodleUser, String moodleDomain) {
 		JSONObject actor = new JSONObject();

@@ -2,6 +2,7 @@ package i5.las2peer.services.moodleDataProxyService;
 
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleWebServiceConnection;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleStatementGenerator;
+import i5.las2peer.logging.L2pLogger;
 
 import java.io.IOException;
 import org.junit.Test;

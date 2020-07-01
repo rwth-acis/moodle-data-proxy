@@ -25,8 +25,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.google.gson.Gson;
-
 import i5.las2peer.api.Context;
 import i5.las2peer.api.ManualDeployment;
 import i5.las2peer.api.logging.MonitoringEvent;
@@ -37,7 +35,7 @@ import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.security.UserAgentImpl;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleWebServiceConnection;
-import i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements.xAPIStatements;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleStatementGenerator;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -67,18 +65,18 @@ public class MoodleDataProxyService extends RESTService {
 
 	private String moodleDomain;
 	private String moodleToken;
+	private String courseList;
 
-	private static HashSet<Integer> courseList = new HashSet<Integer>();
+	private static HashSet<Integer> courses = new HashSet<Integer>();
 	private static ScheduledExecutorService dataStreamThread = null;
+
+	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataProxyService.class.getName());
+	private static MoodleWebServiceConnection moodle = null;
+	private static MoodleStatementGenerator statements = null;
+	private static Context context = null;
 
 	private final static int MOODLE_DATA_STREAM_PERIOD = 60; // Every minute
 	private static long lastChecked = 0;
-
-
-	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataProxyService.class.getName());
-
-	private static Context context = null;
-
 	private static String email = "";
 
 	/**
@@ -88,45 +86,59 @@ public class MoodleDataProxyService extends RESTService {
 	 *
 	 */
 	public MoodleDataProxyService() {
-		/*setFieldValues(); // This sets the values of the configuration file
+		setFieldValues(); // This sets the values of the configuration file
 		if (lastChecked == 0) {
-			// Get current time
-			TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-			Instant instant = timestamp.toInstant();
-			lastChecked = instant.getEpochSecond();
+			// Get current time (currently hard coded for testing)
+			// TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+			// Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			// Instant instant = timestamp.toInstant();
+			lastChecked = 1592325873;//instant.getEpochSecond();
 			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
 		}
 
-		MoodleWebServiceConnection moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
+		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
+		statements = new MoodleStatementGenerator(moodle);
 
 		if (email.equals("")) {
 			try {
-				String siteInfoRaw = moodle.core_webservice_get_site_info();
-				JSONObject siteInfo = new JSONObject(siteInfoRaw);
-				int userId = siteInfo.getInt("userid");
-				String currentUserInfoRaw = moodle.core_user_get_users_by_field("id", userId);
-				JSONArray currentUserInfo = new JSONArray(currentUserInfoRaw);
-				JSONObject u = currentUserInfo.getJSONObject(0);
-				email = u.getString("email");
+				int userId = moodle.core_webservice_get_site_info().getInt("userid");
+				JSONObject user = moodle.core_user_get_users_by_field("id", userId);
+				email = user.getString("email");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 
-		if (courseList == null || courseList.isEmpty()) {
+		updateCourseList();
+	}
+
+	private void updateCourseList() {
+		courses.clear();
+		if (courseList != null && courseList.length() > 0) {
 			try {
-				String courses = moodle.core_course_get_courses();
-				JSONArray jsonCourse = new JSONArray(courses);
-				courseList = new HashSet<Integer>();
-				for (Object o : jsonCourse) {
-					JSONObject course = (JSONObject) o;
-					courseList.add(course.getInt("id"));
+				logger.info("Reading courses from provided list.");
+				String[] idStrings = courseList.split(",");
+				for (String courseid : idStrings) {
+					courses.add(Integer.parseInt(courseid));
 				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				logger.info("Updating course list was successful: " + courses);
+				return;
+			} catch (Exception e) {
+				logger.severe("Reading course list failed");
 				e.printStackTrace();
 			}
+		}
+		try {
+			logger.info("Getting courses from Moodle.");
+			JSONArray coursesJSON = new JSONArray(moodle.core_course_get_courses());
+			for (Object course : coursesJSON) {
+				courses.add(((JSONObject) course).getInt("id"));
+			}
+			logger.info("Updating course list was successful: " + courses);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			logger.severe("Reading course list failed");
+			e.printStackTrace();
 		}
 	}
 
@@ -137,18 +149,18 @@ public class MoodleDataProxyService extends RESTService {
 			value = { @ApiResponse(
 					code = HttpURLConnection.HTTP_OK,
 					message = "Moodle connection is initiaded") })
-//	@RolesAllowed("authenticated")
+	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-		// if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-		// 	return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		// }
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
 
-		// UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
-		// String email = u.getEmail();
-		//
-		// if (!email.equals(email)) {
-		// 	return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-		// }
+		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
+		String uEmail = u.getEmail();
+
+		if (!uEmail.equals(email)) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		}
 		if (dataStreamThread == null) {
 			context = Context.get();
 			dataStreamThread = Executors.newSingleThreadScheduledExecutor();
@@ -167,71 +179,28 @@ public class MoodleDataProxyService extends RESTService {
 	 * @return void
 	 *
 	 */
-/*	private class DataStreamThread implements Runnable {
+	private class DataStreamThread implements Runnable {
 		@Override
 		public void run() {
-			Gson gson = new Gson();
 			TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
 			// Get current time
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			long now = timestamp.toInstant().getEpochSecond();
 
-			for (Integer courseId : courseList) {
+			for (int courseId : courses) {
 				try {
-					JSONArray jsonUserInfo = new JSONArray(moodle.core_enrol_get_enrolled_users(courseId));
-					JSONObject userGradesObject = new JSONObject(moodle.gradereport_user_get_grade_items(courseId));
-					JSONArray userGrades = userGradesObject.getJSONArray("usergrades");
-
-					for (Object uGradesObject : userGrades) {
-						JSONObject uGrades = (JSONObject) uGradesObject;
-						MoodleUserData moodleUserData = moodle.getMoodleUserData(jsonUserInfo, uGrades);
-						JSONArray gradeItems = uGrades.getJSONArray("gradeitems");
-
-						for (Object gradeItemObject : gradeItems) {
-							JSONObject gradeItem = (JSONObject) gradeItemObject;
-							MoodleUserGradeItem gItem = gson.fromJson(gradeItem.toString(), MoodleUserGradeItem.class);
-							gItem.setCourseid(uGrades.getInt("courseid"));
-
-							if (gItem.getGradedategraded() != null && gItem.getGradedategraded() > lastChecked) {
-
-								// Get duration for quiz
-								if (gItem.getItemtype().equals("quiz")) {
-									JSONObject quizReview = new JSONObject(moodle.mod_quiz_get_attempt_review(gItem.getId()));
-									JSONObject quizReviewAttempt = quizReview.getJSONObject("attempt");
-									long start = quizReviewAttempt.getLong("timestart");
-									long finish = quizReviewAttempt.getLong("timefinish");
-									gItem.setDuration(finish - start);
-								}
-								else if (gItem.getItemtype().equals("assign")) {
-									JSONArray assignSubmissions = new JSONArray(
-										moodle.mod_assign_get_submissions(gItem.getIteminstance()));
-									MoodleAssignSubmission mas = moodle.getUserSubmission(assignSubmissions,
-											moodleUserData.getUserId());
-									long start = mas.getTimecreated();
-									long finish = mas.getTimemodified();
-									gItem.setDuration(finish - start);
-								}
-
-								context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,
-										xAPIStatements.createXAPIStatementGrades(moodleUserData, gItem,
-												moodle.getDomainName()) + '*' + moodle.getUserToken());
-
-								logger.info("New grading item " + gItem.getId());
-							}
-						}
+					ArrayList<String> updates = statements.courseUpdatesSince(courseId, lastChecked);
+					for (String update : updates) {
+						context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
 					}
+					logger.info("Sent " + updates.size() + " messages for course " + courseId);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
 			}
-
 			lastChecked = now;
-		}*/
+		}
 	}
-
-//	private void
-
 }

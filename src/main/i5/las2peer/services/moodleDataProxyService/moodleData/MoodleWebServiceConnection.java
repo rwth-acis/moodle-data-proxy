@@ -80,7 +80,7 @@ public class MoodleWebServiceConnection {
 	}
 
 	/**
-	 * @return Returns the information to all courses in moodle
+	 * @return Returns the information to all courses in moodle (the user has access to)
 	 * @throws IOException if an I/O exception occurs.
 	 **/
 	public JSONArray core_course_get_courses() throws IOException {

@@ -28,24 +28,21 @@ import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.Moo
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodlePost;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUser;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleGrade;
-import i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements.xAPIStatements;
+import i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements;
 import i5.las2peer.logging.L2pLogger;
 import java.util.logging.Level;
 
 public class MoodleStatementGenerator {
 	private static MoodleWebServiceConnection moodle;
-	private final static L2pLogger logger = L2pLogger.getInstance("Logger");
+	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataPOJO.class.getName());
 
+	// courses,  users, and assignments are cached
   private static Map<Integer, MoodleCourse> courseList = new HashMap<Integer, MoodleCourse>();
   private static Map<Integer, MoodleUser> userList = new HashMap<Integer, MoodleUser>();
 	private static Map<Integer, MoodleExercise> modList = new HashMap<Integer, MoodleExercise>();
 
   public MoodleStatementGenerator(MoodleWebServiceConnection moodle) {
     MoodleStatementGenerator.moodle = moodle;
-		L2pLogger.setGlobalConsoleLevel(Level.INFO);
-
-		// init course and user list
-		//TODO
   }
 
 	/**
@@ -67,7 +64,7 @@ public class MoodleStatementGenerator {
 		  	JSONObject updateInfo = (JSONObject) updateInfoObj;
 
 				// collect updates forums
-			  if (updateInfo.getString("name").compareTo("discussions") == 0) {
+			  if (updateInfo.getString("name").equals("discussions")) {
 					JSONObject module = moodle.core_course_get_course_module(update.getInt("id"));
 					logger.info("Got forum:\n" + module.toString());
 					forumids.add(module.getInt("instance"));
