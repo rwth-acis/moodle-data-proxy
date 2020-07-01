@@ -92,8 +92,6 @@ public class MoodleUser extends MoodleDataPOJO {
 		this.lang = lang;
 	}
 
-
-
 	// given a user object, this function returns either the 'idnumber'
 	// which stores the oidc sub, or if this field does not exist returns
 	// the base64 encoded email address

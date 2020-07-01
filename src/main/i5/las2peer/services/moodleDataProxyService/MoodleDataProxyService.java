@@ -88,11 +88,11 @@ public class MoodleDataProxyService extends RESTService {
 	public MoodleDataProxyService() {
 		setFieldValues(); // This sets the values of the configuration file
 		if (lastChecked == 0) {
-			// Get current time (currently hard coded for testing)
-			// TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-			// Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-			// Instant instant = timestamp.toInstant();
-			lastChecked = 1592325873;//instant.getEpochSecond();
+			// Get current time
+			TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			Instant instant = timestamp.toInstant();
+			lastChecked = instant.getEpochSecond();
 			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
 		}
 

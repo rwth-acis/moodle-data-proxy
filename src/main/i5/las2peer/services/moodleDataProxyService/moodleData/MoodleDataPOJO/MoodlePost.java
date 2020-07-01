@@ -62,7 +62,7 @@ public class MoodlePost extends MoodleDataPOJO {
 	}
 
 	public int getDiscussionid() {
-		return userid;
+		return discussionid;
 	}
 
 	public void setDiscussionid(int discussionid) {
