@@ -130,7 +130,7 @@ public class MoodleDataProxyService extends RESTService {
 		}
 		try {
 			logger.info("Getting courses from Moodle.");
-			JSONArray coursesJSON = new JSONArray(moodle.core_course_get_courses());
+			JSONArray coursesJSON = moodle.core_course_get_courses();
 			for (Object course : coursesJSON) {
 				courses.add(((JSONObject) course).getInt("id"));
 			}
