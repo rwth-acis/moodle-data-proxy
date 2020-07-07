@@ -8,6 +8,8 @@ public class MoodleGrade extends MoodleDataPOJO {
 	private int grademin;
 	private int grademax;
 	private String feedback;
+	private long timestart = 0;
+	private long timefinish = 0;
 
 	public MoodleGrade(JSONObject gradeData) {
 		if (gradeData.isNull("id")) {
@@ -99,5 +101,23 @@ public class MoodleGrade extends MoodleDataPOJO {
 
 	public void setFedback(String feedback) {
 		this.feedback = feedback;
+	}
+
+	public long getTimestart() {
+		return timestart;
+	}
+
+	public void setTimestart(long timestart) {
+		if (timestart != null)
+			this.timestart = timestart;
+	}
+
+	public long getTimefinish() {
+		return timefinish;
+	}
+
+	public void setTimefinish(long timefinish) {
+		if (timefinish != null)
+			this.timefinish = timefinish;
 	}
 }

@@ -205,6 +205,11 @@ public class xAPIStatements {
 		result.put("completion", true);
 		result.put("response", gradeData.getFeedback());
 
+		if (gradeData.getTimestart() < gradeData.getTimefinish()) {
+			int duration = gradeData.getTimestart() - gradeData.getTimefinish();
+			result.put("duration", "P" + duration + "D");
+		}
+
 		// Score -- new object based on the latest xAPI validation
 		JSONObject score = new JSONObject();
 		score.put("min", gradeData.getGrademin());

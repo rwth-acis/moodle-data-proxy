@@ -209,6 +209,17 @@ public class MoodleWebServiceConnection {
 	}
 
 	/**
+	 * @param quizId This is Id of the quiz you want to have attempts of
+	 * @return Returns attempt information for the specified course
+	 * @throws IOException if an I/O exception occurs.
+	 */
+	public JSONArray mod_quiz_get_user_attempts (int quizId, int userId) throws IOException {
+		String urlParameters = "quizid=" + URLEncoder.encode(Integer.toString(quizId), "UTF-8") +
+		"userid=" + URLEncoder.encode(Integer.toString(userId), "UTF-8");
+		return restRequest("mod_quiz_get_user_attempts", urlParameters).getJSONArray("attempts");
+	}
+
+	/**
 	 * @param courseId This is Id of the course you want to have grades of
 	 * @return Returns quiz information for the specified course
 	 * @throws IOException if an I/O exception occurs.

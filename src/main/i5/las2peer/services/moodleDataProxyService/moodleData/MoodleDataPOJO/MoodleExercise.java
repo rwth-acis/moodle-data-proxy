@@ -5,7 +5,6 @@ import org.json.JSONObject;
 public class MoodleExercise extends MoodleDataPOJO {
 	private String name;
 	private String modname;
-	private long created;
 	private int grade;
 	private String gradepass;
 

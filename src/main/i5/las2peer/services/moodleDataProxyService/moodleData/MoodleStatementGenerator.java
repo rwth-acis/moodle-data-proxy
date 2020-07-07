@@ -147,19 +147,27 @@ public class MoodleStatementGenerator {
 				}
 				logger.info("Got submission:\n" + submission.toString());
 				MoodleUser actor = getUser(userReport.getInt("userid"));
-				MoodleExercise assignment = getModule(submission.getInt("cmid"));
+				MoodleExercise exercise = getModule(submission.getInt("cmid"));
 
 				// add new grade
 				if (!submission.isNull("gradedategraded") &&
 						submission.getLong("gradedategraded") > since) {
 					MoodleGrade grade = new MoodleGrade(submission);
+					if (!submission.isNull("modname") &&
+							submission.getString("modname") == "quiz") {
+						JSONArray attempts = moodle.mod_quiz_get_user_attempts(
+								submission.getId("iteminstance"), userReport.getInt("userid"));
+						JSONObject attempt = attempts.get(0);
+						grade.setTimestart(attempt.getLong("timestart"));
+						grade.setTimefinish(attempt.getLong("timefinish"));
+					}
 					submissions.add(xAPIStatements.createXAPIStatement(
-						actor, "completed", assignment, grade, moodle.getDomainName()) +
+						actor, "completed", exercise, grade, moodle.getDomainName()) +
 						"*" + actor.getMoodleToken());
 				}
 				else {
 					submissions.add(xAPIStatements.createXAPIStatement(
-						actor, "submitted", assignment,
+						actor, "submitted", exercise,
 						submission.getLong("gradedatesubmitted"), moodle.getDomainName()) +
 						"*" + actor.getMoodleToken());
 				}
