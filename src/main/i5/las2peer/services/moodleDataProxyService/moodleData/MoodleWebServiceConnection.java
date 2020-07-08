@@ -18,17 +18,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleAssignSubmission;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleCourse;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserData;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUserGradeItem;
-import i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements.xAPIStatements;
-
 public class MoodleWebServiceConnection {
 	private static String token = null;
 	private static String domainName = null;
 	private static String restFormat = "&moodlewsrestformat=json";
-	private final static String TEST_TOKEN = "abcd1234";
 
 	/**
 	 * @param token access token for the moodle instance
@@ -87,11 +80,11 @@ public class MoodleWebServiceConnection {
 	}
 
 	/**
-	 * @return Returns the information to all courses in moodle
+	 * @return Returns the information to all courses in moodle (the user has access to)
 	 * @throws IOException if an I/O exception occurs.
 	 **/
-	public String core_course_get_courses() throws IOException {
-		return restRequest("core_course_get_courses", null);
+	public JSONArray core_course_get_courses() throws IOException {
+		return new JSONArray(restRequest("core_course_get_courses", null));
 	}
 
 	/**
@@ -99,17 +92,17 @@ public class MoodleWebServiceConnection {
 	 * @return Returns enrolled users for specified course
 	 * @throws IOException if an I/O exception occurs.
 	 **/
-	public String core_enrol_get_enrolled_users(int courseId) throws IOException {
+	public JSONArray core_enrol_get_enrolled_users(int courseId) throws IOException {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
-		return restRequest("core_enrol_get_enrolled_users", urlParameters);
+		return new JSONArray(restRequest("core_enrol_get_enrolled_users", urlParameters));
 	}
 
 	/**
 	 * @return site information and current user information
 	 * @throws IOException if an I/O exception occurs.
 	 */
-	public String core_webservice_get_site_info() throws IOException {
-		return restRequest("core_webservice_get_site_info", "");
+	public JSONObject core_webservice_get_site_info() throws IOException {
+		return new JSONObject(restRequest("core_webservice_get_site_info", ""));
 	}
 
 	/**
@@ -118,12 +111,23 @@ public class MoodleWebServiceConnection {
 	 * @return user object for given field
 	 * @throws IOException if an I/O exception occurs.
 	 */
-	public String core_user_get_users_by_field(String field, int value) throws IOException {
+	public JSONObject core_user_get_users_by_field(String field, int value) throws IOException {
 		String urlParameters = "field=" + URLEncoder.encode(field, "UTF-8");
 		urlParameters += "&values[0]=" + URLEncoder.encode(Integer.toString(value), "UTF-8");
-		return restRequest("core_user_get_users_by_field", urlParameters);
+		JSONArray userJSON = new JSONArray(restRequest("core_user_get_users_by_field", urlParameters));
+		return userJSON.getJSONObject(0);
 	}
 
+	/**
+	 * @param cmid specifies the unique coursemodule id
+	 * @return module object with the given cmid
+	 * @throws IOException if an I/O exception occurs.
+	 */
+	public JSONObject core_course_get_course_module(int cmid) throws IOException {
+		String urlParameters = "cmid=" + URLEncoder.encode(Integer.toString(cmid), "UTF-8");
+		JSONObject moduleJSON = new JSONObject(restRequest("core_course_get_course_module", urlParameters));
+		return moduleJSON.getJSONObject("cm");
+	}
 
 	/**
 	 * @param courseId id of the course you want to have updates
@@ -131,10 +135,22 @@ public class MoodleWebServiceConnection {
 	 * @return updates since given timestamp
 	 * @throws IOException if an I/O exception occurs.
 	 */
-	public String core_course_get_updates_since(int courseId, long since) throws IOException {
+	public JSONArray core_course_get_updates_since(int courseId, long since) throws IOException {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
 		urlParameters += "&since=" + URLEncoder.encode(Long.toString(since), "UTF-8");
-		return restRequest("core_course_get_updates_since", urlParameters);
+		JSONObject updateJSON = new JSONObject(restRequest("core_course_get_updates_since", urlParameters));
+		return updateJSON.getJSONArray("instances");
+	}
+
+
+	/**
+	 * @param courseId id of the course you want to have updates
+	 * @return entire content list of course containing all modules
+	 * @throws IOException if an I/O exception occurs.
+	 */
+	public JSONArray core_course_get_contents(int courseId) throws IOException {
+		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
+		return new JSONArray(restRequest("core_course_get_contents", urlParameters));
 	}
 
 	/**
@@ -142,9 +158,11 @@ public class MoodleWebServiceConnection {
 	 * @return submissions for given id.
 	 * @throws IOException if an I/O exception occurs.
 	 */
-	public String mod_assign_get_submissions(int assignmentId) throws IOException {
+	public JSONArray mod_assign_get_submissions(int assignmentId) throws IOException {
 		String urlParameters = "assignmentids[0]=" + URLEncoder.encode(Integer.toString(assignmentId), "UTF-8");
-		return restRequest("mod_assign_get_submissions", urlParameters);
+		JSONObject submissionJSON = new JSONObject(restRequest("mod_assign_get_submissions", urlParameters));
+		submissionJSON = (JSONObject) ((JSONArray) submissionJSON.getJSONArray("assignments")).get(0);
+		return submissionJSON.getJSONArray("submissions");
 	}
 
 	/**
@@ -162,10 +180,10 @@ public class MoodleWebServiceConnection {
 	 * @return Returns grades for all users, who are enrolled in the specified course
 	 * @throws IOException if an I/O exception occurs.
 	 **/
-	public String gradereport_user_get_grade_items(int courseId) throws IOException {
-
+	public JSONArray gradereport_user_get_grade_items(int courseId) throws IOException {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
-		return restRequest("gradereport_user_get_grade_items", urlParameters);
+		JSONObject reportJSON = new JSONObject(restRequest("gradereport_user_get_grade_items", urlParameters));
+		return reportJSON.getJSONArray("usergrades");
 	}
 
 	/**
@@ -191,319 +209,86 @@ public class MoodleWebServiceConnection {
 	}
 
 	/**
+	 * @param quizId This is Id of the quiz you want to have attempts of
+	 * @return Returns attempt information for the specified course
+	 * @throws IOException if an I/O exception occurs.
+	 */
+	public JSONArray mod_quiz_get_user_attempts (int quizId, int userId) throws IOException {
+		String urlParameters = "quizid=" + URLEncoder.encode(Integer.toString(quizId), "UTF-8") +
+		"userid=" + URLEncoder.encode(Integer.toString(userId), "UTF-8");
+		JSONObject attemptsJSON = new JSONObject(restRequest("mod_quiz_get_user_attempts", urlParameters));
+		return attemptsJSON.getJSONArray("attempts");
+	}
+
+	/**
 	 * @param courseId This is Id of the course you want to have grades of
 	 * @return Returns quiz information for the specified course
 	 * @throws IOException if an I/O exception occurs.
 	 */
-	public String mod_quiz_get_quizzes_by_courses(int courseId) throws IOException {
+	public JSONObject mod_quiz_get_quizzes_by_courses(int courseId) throws IOException {
 		String urlParameters = "courseids[0]=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
-		return restRequest("mod_quiz_get_quizzes_by_courses", urlParameters);
+		return new JSONObject(restRequest("mod_quiz_get_quizzes_by_courses", urlParameters));
 	}
 
 	/**
-	 * @param courseId This is Id of the course you want to the summary of
-	 * @param courses This is moodle data in json format for course information
-	 * @return a summary of the course
+	 * @param courseId This is Id of the course which forums should be returned
+	 * @return Returns forum information for the specified course
+	 * @throws IOException if an I/O exception occurs.
 	 */
-	public String getCourseSummaryById(Integer courseId, String courses) {
-		JSONArray jsonCourses = new JSONArray(courses);
-		String courseSummary = null;
-		// course summary
-		for (Object ob : jsonCourses) {
-			JSONObject jsonCourse = (JSONObject) ob;
-			if (jsonCourse.getInt("id") == courseId && jsonCourse.get("summary") != JSONObject.NULL) {
-				courseSummary = jsonCourse.getString("summary").replaceAll("<.*?>", "");
-			}
-		}
-		return courseSummary;
+	public JSONArray mod_forum_get_forums_by_courses(int courseId) throws IOException {
+		String urlParameters = "courseids[0]=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
+		return new JSONArray(restRequest("mod_forum_get_forums_by_courses", urlParameters));
 	}
 
 	/**
-	 * @param gradereport This is moodle data in json format for the grades
-	 * @param userinfo This is moodle data in json format for the user information
-	 * @param quizzes This is moodle data in json format for quiz information
-	 * @param courses This is moodle data in json format for course information
-	 * @return Returns an ArrayList of statements
+	 * @param forumid This is Id of the forum which discussions should be returned
+	 * @return Returns discussion information for the specified forum
+	 * @throws IOException if an I/O exception occurs.
 	 */
-	public ArrayList<String> statementGenerator(String gradereport, String userinfo, String quizzes, String courses)
-			throws JSONException {
-		ArrayList<String> statements = new ArrayList<>();
-
-		JSONObject jsonGradeReport = new JSONObject(gradereport);
-		JSONArray jsonUserGrades = (JSONArray) jsonGradeReport.get("usergrades");
-		JSONArray jsonUserInfo = new JSONArray(userinfo);
-		JSONObject jsonModQuiz = new JSONObject(quizzes);
-		JSONArray jsonQuizzes = (JSONArray) jsonModQuiz.get("quizzes");
-		JSONArray jsonCourse = new JSONArray(courses);
-
-		Integer courseId;
-		String userFullName;
-		Integer userId;
-		String email;
-		String courseName;
-		String courseSummary;
-		MoodleUserData moodleUserData;
-		MoodleUserGradeItem moodleUserGradeItem;
-
-		for (int i = 0; i < jsonUserGrades.length(); i++) {
-
-			moodleUserData = new MoodleUserData();
-			courseId = null;
-			userFullName = null;
-			userId = null;
-			email = null;
-			courseName = null;
-			courseSummary = null;
-
-			JSONObject jsonUser = (JSONObject) jsonUserGrades.get(i);
-
-			courseId = jsonUser.getInt("courseid");
-			moodleUserData.setCourseId(courseId);
-
-			MoodleCourse moodleCourse = statementGeneratorCourse(jsonCourse, courseId);
-			moodleUserData.setMoodleCourse(moodleCourse);
-
-			courseSummary = getCourseSummaryById(courseId, courses);
-			moodleUserData.setCourseSummary(courseSummary);
-
-			userFullName = jsonUser.getString("userfullname");
-			moodleUserData.setUserFullName(userFullName);
-
-			userId = jsonUser.getInt("userid");
-			moodleUserData.setUserId(userId);
-			// get email
-			email = statementGeneratorGetEmail(jsonUserInfo, userId);
-			if (email == null) {
-				email = userFullName.replace(" ", ".") + userId + "@example.com";
-			}
-			moodleUserData.setEmail(email);
-
-			// get course name
-			courseName = statementGeneratorGetCourseName(jsonUserInfo, userId, courseId);
-			moodleUserData.setCourseName(courseName);
-
-			JSONArray jsonGradeItems = (JSONArray) jsonUser.get("gradeitems");
-
-			for (int j = 0; j < jsonGradeItems.length() - 1; j++) {
-				moodleUserGradeItem = new MoodleUserGradeItem();
-				statements = statementGeneratorGetGrades(j, jsonGradeItems, jsonQuizzes, moodleUserData, statements,
-						moodleUserGradeItem);
-			} // end of loop jsonGradeItems
-		} // end of loop jsonUserGrades
-
-		return statements;
+	public JSONArray mod_forum_get_forum_discussions(int forumid) throws IOException {
+		String urlParameters = "forumid=" + URLEncoder.encode(Integer.toString(forumid), "UTF-8");
+		JSONObject forumJSON = new JSONObject(restRequest("mod_forum_get_forum_discussions", urlParameters));
+		return forumJSON.getJSONArray("discussions");
 	}
 
-	/*
-	 * Splitted previously implemented statementGenerator
-	 * This function retrieves the email of the student
+	/**
+	 * @param discussionid This is Id of the discussion which posts should be returned
+	 * @return Returns posts of the specified discussion
+	 * @throws IOException if an I/O exception occurs.
 	 */
-	private String statementGeneratorGetEmail(JSONArray jsonUserInfo, Integer userId) {
-		String email = "";
-		for (int k = 0; k < jsonUserInfo.length(); k++) {
-			JSONObject jsonInfo = (JSONObject) jsonUserInfo.get(k);
-			if (jsonInfo.getInt("id") == userId) {
-				if (jsonInfo.get("email") != JSONObject.NULL)
-					email = jsonInfo.getString("email");
-				break;
-			}
-		}
-		return email;
+	public JSONArray mod_forum_get_discussion_posts(int discussionid) throws IOException {
+		String urlParameters = "discussionid=" + URLEncoder.encode(Integer.toString(discussionid), "UTF-8");
+		JSONObject postsJSON = new JSONObject(restRequest("mod_forum_get_discussion_posts", urlParameters));
+		return postsJSON.getJSONArray("posts");
 	}
 
-	/*
-	 * Splitted previously implemented statementGenerator
-	 * This function retrieves the course names of the student
+	/**
+	 * @param courseId This is Id of the course which books should be returned
+	 * @return Returns book information for the specified course
+	 * @throws IOException if an I/O exception occurs.
 	 */
-	private String statementGeneratorGetCourseName(JSONArray jsonUserInfo, Integer userId, Integer courseId) {
-		String courseName = null;
-
-		for (int k = 0; k < jsonUserInfo.length(); k++) {
-			JSONObject jsonInfo = (JSONObject) jsonUserInfo.get(k);
-			if (jsonInfo.getInt("id") == userId) {
-				JSONArray jsonEnrolled = (JSONArray) jsonInfo.get("enrolledcourses");
-				for (int l = 0; l < jsonUserInfo.length(); l++) {
-					JSONObject jsonEnrolledCourse = (JSONObject) jsonEnrolled.get(l);
-					if (jsonEnrolledCourse.getInt("id") == courseId) {
-						courseName = jsonEnrolledCourse.getString("fullname");
-						break;
-					}
-				}
-
-			}
-		}
-		return courseName;
+	public JSONObject mod_book_get_books_by_courses(int courseId) throws IOException {
+		String urlParameters = "courseids[0]=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
+		return new JSONObject(restRequest("mod_book_get_books_by_courses", urlParameters));
 	}
 
-	/*
-	 * Splitted previously implemented statementGenerator
-	 * This function retrieves the summary of quizzes
+	/**
+	 * @param courseId This is Id of the course which DBs should be returned
+	 * @return Returns database information for the specified course
+	 * @throws IOException if an I/O exception occurs.
 	 */
-	private String statementGeneratorGetQuizzes(JSONArray jsonQuizzes, Integer courseId, Integer itemId) {
-		String quizSummary = null;
-		for (Object ob : jsonQuizzes) {
-			JSONObject jsonQuiz = (JSONObject) ob;
-			if (jsonQuiz.getInt("course") == courseId && jsonQuiz.getInt("coursemodule") == itemId
-					&& jsonQuiz.get("intro") != JSONObject.NULL) {
-				quizSummary = jsonQuiz.getString("intro");
-			}
-		}
-		return quizSummary;
+	public JSONObject mod_data_get_databases_by_courses(int courseId) throws IOException {
+		String urlParameters = "courseids[0]=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
+		return new JSONObject(restRequest("mod_data_get_databases_by_courses", urlParameters));
 	}
 
-	/*
-	 * Splitted previously implemented statementGenerator
-	 * This function takes into account the grade items
+	/**
+	 * @param courseId This is Id of the course which pages should be returned
+	 * @return Returns page information for the specified course
+	 * @throws IOException if an I/O exception occurs.
 	 */
-	private ArrayList<String> statementGeneratorGetGrades(int index, JSONArray jsonGradeItems, JSONArray jsonQuizzes,
-			MoodleUserData moodleUserData, ArrayList<String> statements, MoodleUserGradeItem moodleUserGradeItem) {
-
-		String itemName = null;
-		Integer itemId = null;
-		String itemModule = null;
-		String gradeDateSubmitted = null;
-		Double percentageFormatted = null;
-		String feedback = null;
-		String quizSummary = null;
-		double gradeMin = 0.0;
-		double gradeMax = 0.0;
-		double gradeRaw = 0.0;
-
-		JSONObject jsonItem = (JSONObject) jsonGradeItems.get(index);
-
-		itemName = !jsonItem.isNull("itemname") ? jsonItem.getString("itemname") : "";
-		moodleUserGradeItem.setItemname(itemName);
-
-		itemId = jsonItem.getInt("id");
-		moodleUserGradeItem.setId(itemId);
-
-		quizSummary = statementGeneratorGetQuizzes(jsonQuizzes, moodleUserData.getCourseId(), itemId);
-		moodleUserData.setQuizSummary(quizSummary);
-
-		itemModule = !jsonItem.isNull("itemmodule") ? jsonItem.getString("itemmodule") : "";
-		moodleUserGradeItem.setItemmodule(itemModule);
-
-		if (jsonItem.get("gradedatesubmitted") != JSONObject.NULL) {
-			/*
-			Date date = new Date();
-			date.setTime(jsonItem.getLong("gradedatesubmitted") * 1000);
-
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
-			gradeDateSubmitted = sdf.format(date) + "Z";
-			*/
-			moodleUserGradeItem.setGradedatesubmitted(jsonItem.getLong("gradedatesubmitted"));
-		}
-
-		// get rid of % and shift the format to 0.XXXX
-		if (jsonItem.get("percentageformatted") != JSONObject.NULL
-				&& !jsonItem.getString("percentageformatted").equals("-")) {
-			double d = Double.parseDouble(jsonItem.getString("percentageformatted").replaceAll("%", "").trim());
-			d = d / 100;
-			percentageFormatted = d;
-		}
-		moodleUserGradeItem.setPercentageformatted(Double.toString(percentageFormatted));
-
-		// get rid of <p></p>
-		if (jsonItem.get("feedback") != JSONObject.NULL) {
-			feedback = jsonItem.getString("feedback").replaceAll("<p>", "").replaceAll("</p>", "");
-		}
-		moodleUserGradeItem.setFeedback(feedback);
-
-		if (jsonItem.get("grademin") != JSONObject.NULL) {
-			gradeMin = jsonItem.getDouble("grademin");
-		}
-		moodleUserGradeItem.setGrademin(gradeMin);
-
-		if (jsonItem.get("grademax") != JSONObject.NULL) {
-			gradeMax = jsonItem.getDouble("grademax");
-		}
-		moodleUserGradeItem.setGrademax(gradeMax);
-
-		if (jsonItem.get("graderaw") != JSONObject.NULL) {
-			gradeRaw = jsonItem.getDouble("graderaw");
-		}
-		moodleUserGradeItem.setGraderaw(gradeRaw);
-
-		moodleUserData.setMoodleUserGradeItem(moodleUserGradeItem);
-
-		// Creating xAPI Statements
-		if (percentageFormatted != null) {
-			statements = xAPIStatements.createXAPIStatements(moodleUserData, statements, domainName, getUserToken());
-		}
-		return statements;
-	}
-
-	private MoodleCourse statementGeneratorCourse(JSONArray jsonCourses, Integer courseId) {
-		MoodleCourse moodleCourse = new MoodleCourse();
-		for (Object ob : jsonCourses) {
-			JSONObject jsonCourse = (JSONObject) ob;
-			if (jsonCourse.getInt("id") == courseId) {
-				moodleCourse.setCategoryId(jsonCourse.getInt("categoryid"));
-				moodleCourse.setStartDate(jsonCourse.getLong("startdate"));
-				moodleCourse.setEndDate(jsonCourse.getLong("enddate"));
-
-				Date d = new Date();
-				DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
-
-				if (moodleCourse.getStartDate() != null && moodleCourse.getEndDate() != null) {
-					long startDate = moodleCourse.getStartDate().longValue() * 1000;
-					Instant instant = Instant.ofEpochMilli(startDate);
-					System.out.println(fmt.format(instant.atZone(ZoneId.systemDefault())));
-
-					Date courseStartDate = Date.from(instant);
-
-					long endDate = moodleCourse.getEndDate().longValue() * 1000;
-					Instant instantEndDate = Instant.ofEpochMilli(endDate);
-					System.out.println(fmt.format(instantEndDate.atZone(ZoneId.systemDefault())));
-
-					Date courseEndDate = Date.from(instantEndDate);
-
-					long diff = courseEndDate.getTime() - courseStartDate.getTime();
-
-					int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
-					System.out.println("difference between days: " + diffDays);
-					moodleCourse.setDuration(diffDays);
-
-				} else {
-					moodleCourse.setDuration(0);
-				}
-				moodleCourse.setFullName(jsonCourse.getString("fullname"));
-			}
-		}
-		return moodleCourse;
-	}
-
-	public MoodleUserData getMoodleUserData(JSONArray jsonUserInfo, JSONObject uGrades) {
-		for (int k = 0; k < jsonUserInfo.length(); k++) {
-			JSONObject user = jsonUserInfo.getJSONObject(k);
-			if (user.getInt("id") == uGrades.getInt("userid")) {
-				MoodleUserData u = new MoodleUserData();
-				u.setEmail(user.getString("email"));
-				u.setUserId(user.getInt("id"));
-				u.setUserFullName(user.getString("fullname"));
-				return u;
-			}
-		}
-		// not found :(
-		return null;
-	}
-
-	public MoodleAssignSubmission getUserSubmission(JSONArray assignSubmissions, int userId) {
-		for (int k = 0; k < assignSubmissions.length(); k++) {
-			JSONObject submission = assignSubmissions.getJSONObject(k);
-			if (submission.getInt("userid") == userId) {
-				MoodleAssignSubmission mas = new MoodleAssignSubmission();
-				mas.setId(submission.getInt("id"));
-				mas.setUserid(userId);
-				mas.setTimecreated(submission.getLong("timecreated"));
-				mas.setTimemodified(submission.getLong("timemodified"));
-				return mas;
-			}
-		}
-		return null; // not found :(
-	}
-
-	public String getUserToken() {
-			return TEST_TOKEN;
+	public JSONObject mod_page_get_pages_by_courses(int courseId) throws IOException {
+		String urlParameters = "courseids[0]=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
+		return new JSONObject(restRequest("mod_page_get_pages_by_courses", urlParameters));
 	}
 }
