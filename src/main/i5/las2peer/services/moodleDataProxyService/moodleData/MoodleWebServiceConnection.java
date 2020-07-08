@@ -216,7 +216,8 @@ public class MoodleWebServiceConnection {
 	public JSONArray mod_quiz_get_user_attempts (int quizId, int userId) throws IOException {
 		String urlParameters = "quizid=" + URLEncoder.encode(Integer.toString(quizId), "UTF-8") +
 		"userid=" + URLEncoder.encode(Integer.toString(userId), "UTF-8");
-		return restRequest("mod_quiz_get_user_attempts", urlParameters).getJSONArray("attempts");
+		JSONObject attemptsJSON = new JSONObject(restRequest("mod_quiz_get_user_attempts", urlParameters));
+		return attemptsJSON.getJSONArray("attempts");
 	}
 
 	/**

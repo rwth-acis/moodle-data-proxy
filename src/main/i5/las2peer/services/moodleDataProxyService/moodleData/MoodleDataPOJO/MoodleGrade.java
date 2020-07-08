@@ -108,7 +108,6 @@ public class MoodleGrade extends MoodleDataPOJO {
 	}
 
 	public void setTimestart(long timestart) {
-		if (timestart != null)
 			this.timestart = timestart;
 	}
 
@@ -117,7 +116,6 @@ public class MoodleGrade extends MoodleDataPOJO {
 	}
 
 	public void setTimefinish(long timefinish) {
-		if (timefinish != null)
-			this.timefinish = timefinish;
+		this.timefinish = timefinish;
 	}
 }

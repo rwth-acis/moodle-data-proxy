@@ -206,7 +206,7 @@ public class xAPIStatements {
 		result.put("response", gradeData.getFeedback());
 
 		if (gradeData.getTimestart() < gradeData.getTimefinish()) {
-			int duration = gradeData.getTimestart() - gradeData.getTimefinish();
+			long duration = gradeData.getTimestart() - gradeData.getTimefinish();
 			result.put("duration", "P" + duration + "D");
 		}
 

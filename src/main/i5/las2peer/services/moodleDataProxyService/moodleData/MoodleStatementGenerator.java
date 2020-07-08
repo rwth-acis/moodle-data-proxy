@@ -156,8 +156,8 @@ public class MoodleStatementGenerator {
 					if (!submission.isNull("modname") &&
 							submission.getString("modname") == "quiz") {
 						JSONArray attempts = moodle.mod_quiz_get_user_attempts(
-								submission.getId("iteminstance"), userReport.getInt("userid"));
-						JSONObject attempt = attempts.get(0);
+								submission.getInt("iteminstance"), userReport.getInt("userid"));
+						JSONObject attempt = (JSONObject) attempts.get(0);
 						grade.setTimestart(attempt.getLong("timestart"));
 						grade.setTimefinish(attempt.getLong("timefinish"));
 					}
