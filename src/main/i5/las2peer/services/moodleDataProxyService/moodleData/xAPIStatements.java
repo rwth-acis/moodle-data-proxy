@@ -10,6 +10,7 @@ import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.Moo
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUser;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleGrade;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleExercise;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleModule;
 import i5.las2peer.logging.L2pLogger;
 
 public class xAPIStatements {
@@ -53,6 +54,9 @@ public class xAPIStatements {
 				break;
 			case "completed":
 				id = "https://w3id.org/xapi/dod-isd/verbs/completed";
+				break;
+			case "viewed":
+				id = "http://id.tincanapi.com/verb/viewed";
 				break;
 		}
 
@@ -121,6 +125,8 @@ public class xAPIStatements {
 			return createDiscussion((MoodleDiscussion) moduleData, domainName);
 		else if (moduleData instanceof MoodleExercise)
 			return createExercise((MoodleExercise) moduleData, domainName);
+		else if (moduleData instanceof MoodleModule)
+			return createModule((MoodleModule) moduleData, domainName);
 		return null;
 	}
 
@@ -173,7 +179,8 @@ public class xAPIStatements {
 		return object;
 	}
 
-	private static JSONObject createExercise(MoodleExercise exerciseData, String domainName) {
+	private static JSONObject createExercise(MoodleExercise exerciseData,
+			String domainName) {
 		JSONObject object = new JSONObject();
 		object.put("id", domainName + "/mod/" + exerciseData.getModname() +
 			"/view.php?id=" + exerciseData.getId());
@@ -231,5 +238,26 @@ public class xAPIStatements {
 		}
 
 		return result;
+	}
+
+	private static JSONObject createModule(MoodleModule moduleData,
+			String domainName) {
+		JSONObject object = new JSONObject();
+		object.put("id", domainName + "/mod/" + moduleData.getModname() +
+				"/view.php?id=" + moduleData.getId());
+
+		JSONObject definition = new JSONObject();
+		definition.put("type", "https://w3id.org/xapi/seriousgames/activity-types/item");
+
+		JSONObject name = new JSONObject();
+		name.put("en-US", moduleData.getModname() + "_" + moduleData.getInstance());
+		definition.put("name", name);
+
+		// definition.interactionType -- new property based on the latest xAPI validation
+		definition.put("interactionType", "other");
+
+		object.put("definition", definition);
+		object.put("objectType", "Activity");
+		return object;
 	}
 }

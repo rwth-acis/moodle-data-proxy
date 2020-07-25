@@ -28,6 +28,7 @@ import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.Moo
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodlePost;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUser;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleGrade;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleModule;
 import i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements;
 import i5.las2peer.logging.L2pLogger;
 import java.util.logging.Level;
@@ -39,7 +40,7 @@ public class MoodleStatementGenerator {
 	// courses,  users, and assignments are cached
   private static Map<Integer, MoodleCourse> courseList = new HashMap<Integer, MoodleCourse>();
   private static Map<Integer, MoodleUser> userList = new HashMap<Integer, MoodleUser>();
-	private static Map<Integer, MoodleExercise> modList = new HashMap<Integer, MoodleExercise>();
+	private static Map<Integer, MoodleDataPOJO> modList = new HashMap<Integer, MoodleDataPOJO>();
 
   public MoodleStatementGenerator(MoodleWebServiceConnection moodle) {
     MoodleStatementGenerator.moodle = moodle;
@@ -75,6 +76,9 @@ public class MoodleStatementGenerator {
 		ArrayList<String> statements = getForumUpdates(forumids, since);
 		statements.addAll(getSubmissions(moodle.gradereport_user_get_grade_items(
 				courseid), since));
+		// get events
+		statements.addAll(getEvents(moodle.local_t4c_get_recent_course_activities(
+				courseid, since), since));
 
 		return statements;
 	}
@@ -147,7 +151,7 @@ public class MoodleStatementGenerator {
 				}
 				logger.info("Got submission:\n" + submission.toString());
 				MoodleUser actor = getUser(userReport.getInt("userid"));
-				MoodleExercise exercise = getModule(submission.getInt("cmid"));
+				MoodleExercise exercise = (MoodleExercise) getModule(submission.getInt("cmid"));
 
 				// add new grade
 				if (!submission.isNull("gradedategraded") &&
@@ -177,6 +181,28 @@ public class MoodleStatementGenerator {
   }
 
  	/**
+ 	 * @param events JSON Array of recent events
+	 * @param since time of oldes event to get included
+ 	 * @return Returns an ArrayList of new events
+	 * @throws IOException if an I/O exception occurs.
+ 	 */
+  private static ArrayList<String> getEvents(JSONArray events,
+			long since) throws IOException {
+		logger.info("Got events:\n" + events.toString());
+		ArrayList<String> viewEvents = new ArrayList<String>();
+		for (Object eventObject : events) {
+			JSONObject event = (JSONObject) eventObject;
+			MoodleUser actor = getUser(event.getInt("userid"));
+			MoodleDataPOJO object = getModule(event.getInt(
+					"contextinstanceid"));
+			viewEvents.add(xAPIStatements.createXAPIStatement(
+				actor, "viewed", object, moodle.getDomainName()) + "*" +
+				actor.getMoodleToken());
+ 		}
+		return viewEvents;
+  }
+
+ 	/**
  	 * @param userid id of the user whose information should be returned
  	 * @return Returns a MoodleUser object associated with given userid
 	 * @throws IOException if an I/O exception occurs.
@@ -200,8 +226,8 @@ public class MoodleStatementGenerator {
  	 * @return Returns a MoodleModule object associated with given cmid
 	 * @throws IOException if an I/O exception occurs.
  	 */
-  private static MoodleExercise getModule(int cmid) throws IOException {
-		MoodleExercise module = modList.get(cmid);
+  private static MoodleDataPOJO getModule(int cmid) throws IOException {
+		MoodleDataPOJO module = modList.get(cmid);
 		if (module == null) {
 			JSONObject moduleJSON = moodle.core_course_get_course_module(cmid);
 			if (moduleJSON == null) {
@@ -216,10 +242,14 @@ public class MoodleStatementGenerator {
 					module = new MoodleExercise(moduleJSON);
 					break;
 				default:
-					logger.severe("Unkown module type " + moduleJSON.getString("modname"));
-					return null;
+					try {
+						module = new MoodleModule(moduleJSON);
+						break;
+					} catch (Exception e) {
+						logger.severe("Error getting module " + cmid + ":" + e.getStackTrace());
+						return null;
+					}
 			}
-
 			modList.put(cmid, module);
 		}
 		return module;

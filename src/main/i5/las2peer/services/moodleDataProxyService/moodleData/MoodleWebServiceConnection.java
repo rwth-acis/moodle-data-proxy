@@ -291,4 +291,16 @@ public class MoodleWebServiceConnection {
 		String urlParameters = "courseids[0]=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
 		return new JSONObject(restRequest("mod_page_get_pages_by_courses", urlParameters));
 	}
+
+	/**
+	 * @param courseId id of the course you want to have events
+	 * @param since long containing the unix timestamp of oldest event
+	 * @return events since given timestamp
+	 * @throws IOException if an I/O exception occurs.
+	 */
+	public JSONArray local_t4c_get_recent_course_activities(int courseId, long since) throws IOException {
+		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
+		urlParameters += "&since=" + URLEncoder.encode(Long.toString(since), "UTF-8");
+		return new JSONArray(restRequest("local_t4c_get_recent_course_activities", urlParameters));
+	}
 }
