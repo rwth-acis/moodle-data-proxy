@@ -11,7 +11,7 @@ WORKDIR /src
 
 # run the rest as unprivileged user
 USER las2peer
-RUN ant jar
+RUN ant
 
 EXPOSE $LAS2PEER_PORT
 ENTRYPOINT ["/src/docker-entrypoint.sh"]

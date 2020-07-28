@@ -196,8 +196,8 @@ public class MoodleStatementGenerator {
 			MoodleDataPOJO object = getModule(event.getInt(
 					"contextinstanceid"));
 			viewEvents.add(xAPIStatements.createXAPIStatement(
-				actor, "viewed", object, moodle.getDomainName()) + "*" +
-				actor.getMoodleToken());
+				actor, "viewed", object, event.getLong("timecreated"),
+				moodle.getDomainName()) + "*" + actor.getMoodleToken());
  		}
 		return viewEvents;
   }

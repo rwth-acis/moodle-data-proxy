@@ -75,6 +75,13 @@ public class xAPIStatements {
 	}
 
 	public static String createXAPIStatement(MoodleUser moodleUser,
+			String activity, MoodleDataPOJO moodleModule, long viewed,
+			String moodleDomain) {
+		return createBasicXAPI(moodleUser, activity, moodleModule, moodleDomain,
+				viewed).toString();
+	}
+
+	public static String createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleExercise moodleExercise, long submitted,
 			String moodleDomain) {
 		return createBasicXAPI(moodleUser, activity, moodleExercise, moodleDomain,

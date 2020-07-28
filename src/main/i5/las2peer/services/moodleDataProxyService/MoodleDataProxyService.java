@@ -90,8 +90,7 @@ public class MoodleDataProxyService extends RESTService {
 		if (lastChecked == 0) {
 			// Get current time
 			TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-			// current timestamp minus one day
-			Timestamp timestamp = new Timestamp(System.currentTimeMillis() - 86400000);
+			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			Instant instant = timestamp.toInstant();
 			lastChecked = instant.getEpochSecond();
 			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
@@ -190,8 +189,10 @@ public class MoodleDataProxyService extends RESTService {
 
 			for (int courseId : courses) {
 				try {
+					logger.warning("Getting updates since " + lastChecked);
 					ArrayList<String> updates = statements.courseUpdatesSince(courseId, lastChecked);
 					for (String update : updates) {
+						logger.warning("Got update: " + update);
 						context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
 					}
 					logger.info("Sent " + updates.size() + " messages for course " + courseId);

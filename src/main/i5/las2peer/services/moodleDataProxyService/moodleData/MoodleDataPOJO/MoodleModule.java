@@ -8,6 +8,7 @@ public class MoodleModule extends MoodleDataPOJO {
 	private String modname;
 	private int course;
 	private int instance;
+	private long added;
 
 	public MoodleModule(JSONObject moduleData) {
 		if (moduleData.isNull("id")) {
@@ -33,10 +34,10 @@ public class MoodleModule extends MoodleDataPOJO {
 		}
 		if (moduleData.isNull("added")) {
 			logger.warning("Missing expected field added for module " + this.id);
-			this.created = 0;
+			this.added = 0;
 		}
 		else {
-			this.created = moduleData.getLong("added");
+			this.added = moduleData.getLong("added");
 		}
 		if (moduleData.isNull("instance")) {
 			logger.warning("Missing expected field instance for module " + this.id);
@@ -70,4 +71,16 @@ public class MoodleModule extends MoodleDataPOJO {
 	public void setInstance(int instance) {
 		this.instance = instance;
 	}
+
+  public long getAdded() {
+    return this.added;
+  }
+
+  public void setAdded(long added) {
+    this.added = added;
+  }
+
+  public void setCreated(long created) {
+    this.created = created;
+  }
 }
