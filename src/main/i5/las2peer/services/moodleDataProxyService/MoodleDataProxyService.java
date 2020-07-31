@@ -189,11 +189,16 @@ public class MoodleDataProxyService extends RESTService {
 
 			for (int courseId : courses) {
 				try {
-					logger.warning("Getting updates since " + lastChecked);
+					logger.info("Getting updates since " + lastChecked);
 					ArrayList<String> updates = statements.courseUpdatesSince(courseId, lastChecked);
 					for (String update : updates) {
-						logger.warning("Got update: " + update);
-						context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
+						// handle timestamps from the future next time
+						if (checkXAPITimestamp(update) < now)
+							context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
+						else {
+							updates.remove(update);
+							logger.warning("Not sending: " + update);
+						}
 					}
 					logger.info("Sent " + updates.size() + " messages for course " + courseId);
 				} catch (Exception e) {
@@ -202,6 +207,22 @@ public class MoodleDataProxyService extends RESTService {
 				}
 			}
 			lastChecked = now;
+		}
+
+		private long checkXAPITimestamp(String message) {
+			String statement = message.split("\\*")[0];
+			JSONObject statementJSON;
+			try {
+				 statementJSON = new JSONObject(statement);
+			} catch (Exception e) {
+				logger.severe("Error pasing message to JSON: " + message);
+				return 0;
+			}
+			if (statementJSON.isNull("timestamp")) {
+				logger.severe("Couldn't get timestamp of message: " + message);
+				return 0;
+			}
+			return statementJSON.getLong("timestamp");
 		}
 	}
 }

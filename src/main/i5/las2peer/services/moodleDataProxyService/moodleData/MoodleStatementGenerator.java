@@ -193,10 +193,17 @@ public class MoodleStatementGenerator {
 		for (Object eventObject : events) {
 			JSONObject event = (JSONObject) eventObject;
 			MoodleUser actor = getUser(event.getInt("userid"));
-			MoodleDataPOJO object = getModule(event.getInt(
-					"contextinstanceid"));
+			MoodleDataPOJO object = getModule(event.getInt("contextinstanceid"));
+
+			// if target is not a module, log the target name and id
+			// instead of the module name
+			String overwriteName = "";
+			if (!event.getString("target").equals("course_module")) {
+				overwriteName = event.getString("target") + "_" +
+					event.getInt("objectid");
+			}
 			viewEvents.add(xAPIStatements.createXAPIStatement(
-				actor, "viewed", object, event.getLong("timecreated"),
+				actor, "viewed", object, event.getLong("timecreated"), overwriteName,
 				moodle.getDomainName()) + "*" + actor.getMoodleToken());
  		}
 		return viewEvents;

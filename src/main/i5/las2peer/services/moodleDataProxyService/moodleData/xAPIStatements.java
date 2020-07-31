@@ -68,12 +68,14 @@ public class xAPIStatements {
 		return verbObj;
 	}
 
+  // create standard xAPI statement
 	public static String createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleDataPOJO moodleModule, String moodleDomain) {
 		return createBasicXAPI(moodleUser, activity, moodleModule, moodleDomain,
 				moodleModule.getCreated()).toString();
 	}
 
+	// create xAPI statement with custom timestamp
 	public static String createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleDataPOJO moodleModule, long viewed,
 			String moodleDomain) {
@@ -81,13 +83,25 @@ public class xAPIStatements {
 				viewed).toString();
 	}
 
+	// create xAPI statement with custom timestamp and custom name
 	public static String createXAPIStatement(MoodleUser moodleUser,
-			String activity, MoodleExercise moodleExercise, long submitted,
+			String activity, MoodleDataPOJO moodleModule, long viewed, String newName,
 			String moodleDomain) {
-		return createBasicXAPI(moodleUser, activity, moodleExercise, moodleDomain,
-				submitted).toString();
+		JSONObject viewEvent = createBasicXAPI(moodleUser, activity, moodleModule,
+			moodleDomain, viewed);
+		if (newName.length() > 0) {
+			JSONObject object = viewEvent.getJSONObject("object");
+			JSONObject definition = object.getJSONObject("definition");
+			JSONObject name = definition.getJSONObject("name");
+			name.put("en-US", newName);
+			definition.put("name", name);
+			object.put("definition", definition);
+			viewEvent.put("object", object);
+		}
+		return viewEvent.toString();
 	}
 
+	// create xAPI statement from exercise with grade data
 	public static String createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleExercise moodleExercise, MoodleGrade gradeData,
 			String moodleDomain) {
