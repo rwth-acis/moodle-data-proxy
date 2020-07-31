@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -219,10 +221,15 @@ public class MoodleDataProxyService extends RESTService {
 				return 0;
 			}
 			if (statementJSON.isNull("timestamp")) {
-				logger.severe("Couldn't get timestamp of message: " + message);
+			}
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+				Date dt = sdf.parse(statementJSON.getString("timestamp"));
+				return dt.getTime();
+			} catch (Exception e) {
+				logger.severe("Couldn't parse timestamp of message: " + message);
 				return 0;
 			}
-			return statementJSON.getLong("timestamp");
 		}
 	}
 }
