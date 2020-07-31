@@ -16,6 +16,7 @@
 
         <!-- https://mvnrepository.com/artifact/org.json/json -->
         <dependency org="org.json" name="json" rev="20180813" conf="platform->*"/>
+        <dependency org="com.google.code.gson" name="gson" rev="2.8.6" conf="platform->*"/>
         
         <!-- service dependencies -->
         <!-- Add service dependencies here -->
