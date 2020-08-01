@@ -193,16 +193,17 @@ public class MoodleDataProxyService extends RESTService {
 				try {
 					logger.info("Getting updates since " + lastChecked);
 					ArrayList<String> updates = statements.courseUpdatesSince(courseId, lastChecked);
+					short updateCounter = 0;
 					for (String update : updates) {
 						// handle timestamps from the future next time
-						if (checkXAPITimestamp(update) < now)
-							context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
-						else {
-							updates.remove(update);
-							logger.warning("Not sending: " + update);
+						if (checkXAPITimestamp(update) > now) {
+							logger.warning("Current timestamp (" + now + ") smaller than " +
+								"timestamp (" + checkXAPITimestamp(update) + ") of update: " + update);
 						}
+						context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
+						updateCounter++;
 					}
-					logger.info("Sent " + updates.size() + " messages for course " + courseId);
+					logger.info("Sent " + updateCounter + " messages for course " + courseId);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -223,11 +224,11 @@ public class MoodleDataProxyService extends RESTService {
 			if (statementJSON.isNull("timestamp")) {
 			}
 			try {
-				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 				Date dt = sdf.parse(statementJSON.getString("timestamp"));
 				return dt.getTime();
 			} catch (Exception e) {
-				logger.severe("Couldn't parse timestamp of message: " + message);
+				logger.severe("Couldn't parse timestamp of message: " + message + e);
 				return 0;
 			}
 		}
