@@ -150,16 +150,16 @@ public class MoodleDataProxyService extends RESTService {
 					message = "Moodle connection is initiaded") })
 	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		}
-
-		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
-		String uEmail = u.getEmail();
-
-		if (!uEmail.equals(email)) {
-			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-		}
+//		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+//			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+//		}
+//
+//		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
+//		String uEmail = u.getEmail();
+//
+//		if (!uEmail.equals(email)) {
+//			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+//		}
 		if (dataStreamThread == null) {
 			context = Context.get();
 			dataStreamThread = Executors.newSingleThreadScheduledExecutor();
