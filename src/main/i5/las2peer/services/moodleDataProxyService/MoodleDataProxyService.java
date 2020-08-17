@@ -68,6 +68,7 @@ public class MoodleDataProxyService extends RESTService {
 	private String moodleDomain;
 	private String moodleToken;
 	private String courseList;
+	private boolean usesBlockchainVerification;
 
 	private static HashSet<Integer> courses = new HashSet<Integer>();
 	private static ScheduledExecutorService dataStreamThread = null;
@@ -155,6 +156,11 @@ public class MoodleDataProxyService extends RESTService {
 		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
 			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
 		}
+		
+		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
+		if (usesBlockchainVerification) {
+			
+		}
 
 		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
 		String uEmail = u.getEmail();
@@ -195,6 +201,13 @@ public class MoodleDataProxyService extends RESTService {
 					ArrayList<String> updates = statements.courseUpdatesSince(courseId, lastChecked);
 					short updateCounter = 0;
 					for (String update : updates) {
+						logger.warning("Checking consent for update:" + update);
+						if (usesBlockchainVerification && !checkUserConsent(update)) {
+							// Skip this update if acting user did not consent to data extraction.
+							continue;
+						}
+						logger.warning("Proceeding...");
+						
 						// handle timestamps from the future next time
 						if (checkXAPITimestamp(update) > now) {
 							logger.warning("Current timestamp (" + now + ") smaller than " +
@@ -230,6 +243,37 @@ public class MoodleDataProxyService extends RESTService {
 			} catch (Exception e) {
 				logger.severe("Couldn't parse timestamp of message: " + message + e);
 				return 0;
+			}
+		}
+		
+		private boolean checkUserConsent(String message) {
+			String statement = message.split("\\*")[0];
+			JSONObject statementJSON;
+			try {
+				 statementJSON = new JSONObject(statement);
+			} catch (Exception e) {
+				logger.severe("Error pasing message to JSON: " + message);
+				return false;
+			}
+			
+			// TODO: Test how each extraction is structured and how to best identify the targeted user 
+			if (statementJSON.isNull("actor")) {
+				logger.warning("Message does not seem to contain personal data.");
+				return true;
+			} else {
+				JSONObject account = statementJSON.getJSONObject("actor").getJSONObject("account");
+				String userEmail = account.getString("name");
+				logger.warning("Checking consent for email: " + userEmail + "...");
+				boolean consentGiven = false;
+				try {
+					consentGiven = (boolean) context.invoke("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "checkUserConsent", userEmail);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return false;
+				}
+				logger.warning("Consent given: " + consentGiven);
+				return consentGiven;
 			}
 		}
 	}
