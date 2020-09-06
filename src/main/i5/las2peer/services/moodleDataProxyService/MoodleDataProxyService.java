@@ -159,7 +159,7 @@ public class MoodleDataProxyService extends RESTService {
 		
 		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
 		if (usesBlockchainVerification) {
-			
+			logger.warning("Proxy service uses blockchain verification and consent checks");
 		}
 
 		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
@@ -252,7 +252,7 @@ public class MoodleDataProxyService extends RESTService {
 			try {
 				 statementJSON = new JSONObject(statement);
 			} catch (Exception e) {
-				logger.severe("Error pasing message to JSON: " + message);
+				logger.severe("Error parsing message to JSON: " + message);
 				return false;
 			}
 			
@@ -266,7 +266,7 @@ public class MoodleDataProxyService extends RESTService {
 				logger.warning("Checking consent for email: " + userEmail + "...");
 				boolean consentGiven = false;
 				try {
-					consentGiven = (boolean) context.invoke("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "checkUserConsent", userEmail);
+					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "checkUserConsent", userEmail);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
