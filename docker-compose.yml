@@ -1,0 +1,41 @@
+version: "3"
+services:
+    las2peer:
+        image: rwthacis/las2peer
+        environment:
+            LAS2PEER_PORT: 8090
+        ports:
+            - "8080:8080"
+            - "8090:8090"
+    moodle-data-proxy:
+        image: moodle-data-proxy:develop
+        environment:
+            MOODLE_DOMAIN: https://moodle.tech4comp.dbis.rwth-aachen.de/
+            MOODLE_TOKEN: 424f0b29c3d5944506ea9ca8b9dec502
+            COURSE_LIST: 10
+            BOOTSTRAP: las2peer:8090
+    mobsos-data-processing:
+        image: rwthacis/mobsos-data-processing:develop
+        environment:
+            LAS2PEER_PORT: 8090
+            MYSQL_USER: "root"
+            MYSQL_PASSWORD: "password"
+            MYSQL_HOST: db
+            SEND_TO_LRS: "TRUE"
+            BOOTSTRAP: las2peer:8090
+    learning_locker_service:
+        image: rwthacis/learning-locker-service:develop
+        environment:
+            LRS_AUTH_ADMIN: "Basic ZWJlOGU4ZGQ1NzU4NmI4MmJlMjA3MDFmN2VlOTg3OTFlN2RiMTUzMTo2OTZhMTlkYjVjZGExZjZjZTIwYTVlNDZjNGM3OWFlOTg4MDIxMzY3"
+            LRS_CLIENT_ID: 5e272044f453590025d71fb7
+            LAS2PEER_PORT: 8090
+            LRS_DOMAIN: "https://lrs.tech4comp.dbis.rwth-aachen.de/"
+            BOOTSTRAP: las2peer:8090
+    db:
+        container_name: mysql
+        image: mysql:5.7
+        environment:
+            MYSQL_ROOT_PASSWORD: "password"
+        ports:
+            - "3306:3306"
+
