@@ -71,3 +71,45 @@ The las2peer port is fixed at *9011*.
 |----------|---------|-------------|
 | BOOTSTRAP | unset | Set the --bootstrap option to bootstrap with existing nodes. The container will wait for any bootstrap node to be available before continuing. |
 | SERVICE_PASSPHRASE | Passphrase | Set the second argument in *startService('<service@version>', '<SERVICE_PASSPHRASE>')*. |
+
+
+Setting up a local development environment with Docker-compose
+-------------------
+
+After cloning the repository, you can build the image using:
+```bash
+sudo docker build -t moodle-data-proxy:develop ./moodle-data-proxy
+```
+Now the image is referencable under __moodle-data-proxy:develop__ through the docker-compose file.
+Navigate into the _moodle-data-proxy directory_. First you have to once run:
+```bash
+sudo docker-compose up
+```
+to get everything in its initial state. THis will take some time because of the mysql database.
+
+Some of the services will now try to access a database called __LAS2PEERMON__ in _mysql_ that doesn't yet exist.
+They will exit with error codes, but this is fine. Once you see a reference to this database you can stop the run with _Ctrl + C_.
+
+Now we will create the database. First, start the _mysql_ container so that we can interact with it:
+```bash
+sudo docker start mysql
+```
+Then, to access it:
+```bash
+sudo docker exec -it mysql mysql -p
+```
+When prompted for the password enter _password_.
+Now the mysql console should start. Create the desired database using:
+
+```bash
+create database LAS2PEERMON;
+exit
+```
+This has now set up the database. Now running the command:
+```bash
+sudo docker-compose up
+```
+should run the system correctly. If the system seems to be deadlocked in some fashion, consider running:
+```bash
+sudo docker-compose up --force-recreate
+```
