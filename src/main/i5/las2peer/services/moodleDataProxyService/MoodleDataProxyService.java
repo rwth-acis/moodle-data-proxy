@@ -256,17 +256,19 @@ public class MoodleDataProxyService extends RESTService {
 				return false;
 			}
 			
-			// TODO: Test how each extraction is structured and how to best identify the targeted user 
 			if (statementJSON.isNull("actor")) {
 				logger.warning("Message does not seem to contain personal data.");
 				return true;
 			} else {
 				JSONObject account = statementJSON.getJSONObject("actor").getJSONObject("account");
 				String userEmail = account.getString("name");
-				logger.warning("Checking consent for email: " + userEmail + "...");
+				JSONObject action = statementJSON.getJSONObject("verb").getJSONObject("display");
+				String verb = action.getString("en-US");
+				
+				logger.warning("Checking consent for email: " + userEmail + " and action: " + verb + " ...");
 				boolean consentGiven = false;
 				try {
-					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "checkUserConsent", userEmail);
+					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "checkUserConsent", userEmail, verb);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
