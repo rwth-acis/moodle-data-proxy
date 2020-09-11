@@ -156,7 +156,7 @@ public class MoodleDataProxyService extends RESTService {
 		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
 			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
 		}
-		
+
 		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
 		if (usesBlockchainVerification) {
 			logger.warning("Proxy service uses blockchain verification and consent checks");
@@ -206,12 +206,11 @@ public class MoodleDataProxyService extends RESTService {
 							// Skip this update if acting user did not consent to data extraction.
 							continue;
 						}
-						logger.warning("Proceeding...");
-						
+
 						// handle timestamps from the future next time
 						if (checkXAPITimestamp(update) > now) {
 							logger.warning("Current timestamp (" + now + ") smaller than " +
-								"timestamp (" + checkXAPITimestamp(update) + ") of update: " + update);
+									"timestamp (" + checkXAPITimestamp(update) + ") of update: " + update);
 						}
 						context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
 						updateCounter++;
@@ -229,7 +228,7 @@ public class MoodleDataProxyService extends RESTService {
 			String statement = message.split("\\*")[0];
 			JSONObject statementJSON;
 			try {
-				 statementJSON = new JSONObject(statement);
+				statementJSON = new JSONObject(statement);
 			} catch (Exception e) {
 				logger.severe("Error pasing message to JSON: " + message);
 				return 0;
@@ -245,17 +244,17 @@ public class MoodleDataProxyService extends RESTService {
 				return 0;
 			}
 		}
-		
+
 		private boolean checkUserConsent(String message) {
 			String statement = message.split("\\*")[0];
 			JSONObject statementJSON;
 			try {
-				 statementJSON = new JSONObject(statement);
+				statementJSON = new JSONObject(statement);
 			} catch (Exception e) {
 				logger.severe("Error parsing message to JSON: " + message);
 				return false;
 			}
-			
+
 			if (statementJSON.isNull("actor")) {
 				logger.warning("Message does not seem to contain personal data.");
 				return true;
@@ -264,11 +263,15 @@ public class MoodleDataProxyService extends RESTService {
 				String userEmail = account.getString("name");
 				JSONObject action = statementJSON.getJSONObject("verb").getJSONObject("display");
 				String verb = action.getString("en-US");
-				
+
 				logger.warning("Checking consent for email: " + userEmail + " and action: " + verb + " ...");
 				boolean consentGiven = false;
 				try {
 					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "checkUserConsent", userEmail, verb);
+					if (consentGiven) {
+						// If consent for data extraction is given create log entry with included data
+						context.invokeInternally("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "createLogEntry", userEmail, verb, message);
+					}
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
