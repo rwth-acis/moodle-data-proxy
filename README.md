@@ -75,3 +75,26 @@ The las2peer port is fixed at *9011*.
 |----------|---------|-------------|
 | BOOTSTRAP | unset | Set the --bootstrap option to bootstrap with existing nodes. The container will wait for any bootstrap node to be available before continuing. |
 | SERVICE_PASSPHRASE | Passphrase | Set the second argument in *startService('<service@version>', '<SERVICE_PASSPHRASE>')*. |
+
+List of generated xAPI Statement Verb/Object coverage
+-------------------
+
+### Verbs
+The following xAPI verbs have been implemented, in regards to what Moodle API responds:
+* posted
+* replied
+* submitted
+* created
+* received
+* answered
+* completed
+* viewed
+
+### Objects
+The following Moodle concepts have been covered, turned into the following xAPI Object types
+| Moodle | xAPI Object |
+|--------|-------------|
+| Forum Post | Activity - Forum Reply |
+| Discussion | Activity - Discussion |
+| Exercise | Activity - School Assignment |
+| Module | Activity - Item |
