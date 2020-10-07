@@ -11,8 +11,8 @@ services:
         image: moodle-data-proxy:develop
         environment:
             MOODLE_DOMAIN: https://moodle.tech4comp.dbis.rwth-aachen.de/
-            MOODLE_TOKEN: 424f0b29c3d5944506ea9ca8b9dec502
-            COURSE_LIST: 10
+            MOODLE_TOKEN: 0f04baf3cdd5c82f55eb1a96e48eec53
+            COURSE_LIST: 10,120
             BOOTSTRAP: las2peer:8090
     mobsos-data-processing:
         image: rwthacis/mobsos-data-processing:develop

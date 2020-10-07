@@ -12,9 +12,9 @@ public class MoodleDataProxyServiceTest {
 
   @Test
   public void testStatementGenerator() throws IOException {
-    MoodleWebServiceConnection moodle = new MoodleWebServiceConnection("424f0b29c3d5944506ea9ca8b9dec502",
+    MoodleWebServiceConnection moodle = new MoodleWebServiceConnection("0f04baf3cdd5c82f55eb1a96e48eec53",
       "https://moodle.tech4comp.dbis.rwth-aachen.de");
     MoodleStatementGenerator statements = new MoodleStatementGenerator(moodle);
-    System.out.println(statements.courseUpdatesSince(10, 1595931803));
+    System.out.println(statements.courseUpdatesSince(10, 1602086139));
   }
 }

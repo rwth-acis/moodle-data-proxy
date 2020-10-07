@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +44,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Contact;
 import io.swagger.annotations.Info;
 import io.swagger.annotations.SwaggerDefinition;
+import jdk.nashorn.internal.ir.ThrowNode;
 
 @Api
 @SwaggerDefinition(
@@ -222,7 +225,23 @@ public class MoodleDataProxyService extends RESTService {
 				logger.severe("Couldn't get timestamp of message: " + message);
 				return 0;
 			}
-			return statementJSON.getLong("timestamp");
+
+			Object timestampObject = statementJSON.get("timestamp");
+			if (timestampObject instanceof Integer) {
+				return (long) timestampObject;
+			}
+			else if (timestampObject instanceof String) {
+				try {
+					OffsetDateTime odt = OffsetDateTime.parse((String) timestampObject);
+					return odt.toEpochSecond();
+				} catch (Exception e) {
+					logger.severe("Could not parse DateTime format: " + message);
+				}
+			}
+			else {
+				logger.severe("Unkown timestamp format: " + message);
+			}
+			return 0;
 		}
 	}
 }
