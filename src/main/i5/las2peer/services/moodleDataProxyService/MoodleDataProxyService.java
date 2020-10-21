@@ -199,8 +199,7 @@ public class MoodleDataProxyService extends RESTService {
 						if (checkXAPITimestamp(update) < now)
 							context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
 						else {
-							updates.remove(update);
-							logger.warning("Not sending: " + update);
+							logger.warning("Update not being sent due to it happening in the future: " + update);
 						}
 					}
 					logger.info("Sent " + updates.size() + " messages for course " + courseId);
