@@ -28,6 +28,9 @@ Note, that if no courseList is provided, activities will be logged for all cours
 
 Build
 --------
+The build includes a small test which tries to connect to a Moodle instance and retrieves course updates which requires access to a running Moodle instance.
+Before building either fill in the relevant data in the [test class](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/src/test/i5/las2peer/services/moodleDataProxyService/MoodleDataProxyServiceTest.java#L13-L16), or deactivate the test (e.g., by removing the file).
+
 Execute the following command on your shell:
 
 ```shell
@@ -78,6 +81,10 @@ The las2peer port is fixed at *9011*.
 
 Setting up a local development environment with Docker-compose
 -------------------
+
+The development environment consists of three services, the *moodle-data-proxy* itself, [*mobsos*](https://github.com/rwth-acis/mobsos-data-processing), and the [*learning-locker-service*](https://github.com/rwth-acis/learning-locker-service).
+All of can be setup using docker-compose, however you need to specify the [web endpoint](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/docker-compose.yml#L13) of a running Moodle instance (.e.g., *https://moodle.tech4comp.dbis.rwth-aachen.de/*) and a [valid token](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/docker-compose.yml#L14), as well as the [domain](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/docker-compose.yml#L32) of a Learning Locker instance (e.g., *https://lrs.tech4comp.dbis.rwth-aachen.de/*) including respective [access credentials](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/docker-compose.yml#L29-L30).
+You can read more about the Learning Locker credentials in the README of the [learning-locker-service](https://github.com/rwth-acis/learning-locker-service/tree/develop#how-to-run-using-docker).
 
 After cloning the repository, you can build the image using:
 ```bash

@@ -10,7 +10,7 @@ services:
     moodle-data-proxy:
         image: moodle-data-proxy:develop
         environment:
-            MOODLE_DOMAIN: https://moodle.tech4comp.dbis.rwth-aachen.de/
+            MOODLE_DOMAIN:
             MOODLE_TOKEN: 
             COURSE_LIST: 10
             BOOTSTRAP: las2peer:8090
@@ -29,7 +29,7 @@ services:
             LRS_AUTH_ADMIN: 
             LRS_CLIENT_ID: 
             LAS2PEER_PORT: 8090
-            LRS_DOMAIN: "https://lrs.tech4comp.dbis.rwth-aachen.de/"
+            LRS_DOMAIN:
             BOOTSTRAP: las2peer:8090
     db:
         container_name: mysql
