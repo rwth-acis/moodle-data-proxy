@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -153,16 +155,16 @@ public class MoodleDataProxyService extends RESTService {
 					message = "Moodle connection is initiaded") })
 	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-//		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-//			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-//		}
-//
-//		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
-//		String uEmail = u.getEmail();
-//
-//		if (!uEmail.equals(email)) {
-//			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-//		}
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
+
+		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
+		String uEmail = u.getEmail();
+
+		if (!uEmail.equals(email)) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		}
 		if (dataStreamThread == null) {
 			context = Context.get();
 			dataStreamThread = Executors.newSingleThreadScheduledExecutor();
@@ -194,15 +196,16 @@ public class MoodleDataProxyService extends RESTService {
 				try {
 					logger.info("Getting updates since " + lastChecked);
 					ArrayList<String> updates = statements.courseUpdatesSince(courseId, lastChecked);
+					short updateCounter = 0;
 					for (String update : updates) {
 						// handle timestamps from the future next time
 						if (checkXAPITimestamp(update) < now)
 							context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
 						else {
 							logger.warning("Update not being sent due to it happening in the future: " + update);
-						}
-					}
-					logger.info("Sent " + updates.size() + " messages for course " + courseId);
+            }
+          }
+					logger.info("Sent " + updateCounter + " messages for course " + courseId);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -221,7 +224,13 @@ public class MoodleDataProxyService extends RESTService {
 				return 0;
 			}
 			if (statementJSON.isNull("timestamp")) {
-				logger.severe("Couldn't get timestamp of message: " + message);
+			}
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+				Date dt = sdf.parse(statementJSON.getString("timestamp"));
+				return dt.getTime();
+			} catch (Exception e) {
+				logger.severe("Couldn't parse timestamp of message: " + message + e);
 				return 0;
 			}
 
