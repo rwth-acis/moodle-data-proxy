@@ -29,7 +29,7 @@ Note, that if no courseList is provided, activities will be logged for all cours
 Build
 --------
 The build includes a small test which tries to connect to a Moodle instance and retrieves course updates which requires access to a running Moodle instance.
-Before building either fill in the relevant data in the [test class](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/src/test/i5/las2peer/services/moodleDataProxyService/MoodleDataProxyServiceTest.java#L13-L16), or deactivate the test (e.g., by removing the file).
+The test is deactivated by default to enable the automatic built, but it is generally recommended to activate it for development by filling in the relevant data in the [test class](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/src/test/i5/las2peer/services/moodleDataProxyService/MoodleDataProxyServiceTest.java#L13-L16).
 
 Execute the following command on your shell:
 

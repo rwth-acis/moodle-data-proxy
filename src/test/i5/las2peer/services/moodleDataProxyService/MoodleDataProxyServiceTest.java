@@ -17,8 +17,9 @@ public class MoodleDataProxyServiceTest {
 
   @Test
   public void testStatementGenerator() throws IOException {
-    MoodleWebServiceConnection moodle = new MoodleWebServiceConnection(MOODLE_TOKEN,MOODLE_DOMAIN);
-    MoodleStatementGenerator statements = new MoodleStatementGenerator(moodle);
-    System.out.println(statements.courseUpdatesSince(COURSE_ID,TIMESTAMP));
+    System.out.println("Test currently deactivated!");
+//    MoodleWebServiceConnection moodle = new MoodleWebServiceConnection(MOODLE_TOKEN,MOODLE_DOMAIN);
+//    MoodleStatementGenerator statements = new MoodleStatementGenerator(moodle);
+//    System.out.println(statements.courseUpdatesSince(COURSE_ID,TIMESTAMP));
   }
 }
