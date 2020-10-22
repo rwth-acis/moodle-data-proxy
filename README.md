@@ -28,6 +28,9 @@ Note, that if no courseList is provided, activities will be logged for all cours
 
 Build
 --------
+The build includes a small test which tries to connect to a Moodle instance and retrieves course updates which requires access to a running Moodle instance.
+The test is deactivated by default to enable the automatic built, but it is generally recommended to activate it for development by filling in the relevant data in the [test class](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/src/test/i5/las2peer/services/moodleDataProxyService/MoodleDataProxyServiceTest.java#L13-L16).
+
 Execute the following command on your shell:
 
 ```shell
@@ -75,6 +78,51 @@ The las2peer port is fixed at *9011*.
 |----------|---------|-------------|
 | BOOTSTRAP | unset | Set the --bootstrap option to bootstrap with existing nodes. The container will wait for any bootstrap node to be available before continuing. |
 | SERVICE_PASSPHRASE | Passphrase | Set the second argument in *startService('<service@version>', '<SERVICE_PASSPHRASE>')*. |
+
+Setting up a local development environment with Docker-compose
+-------------------
+
+The development environment consists of three services, the *moodle-data-proxy* itself, [*mobsos*](https://github.com/rwth-acis/mobsos-data-processing), and the [*learning-locker-service*](https://github.com/rwth-acis/learning-locker-service).
+All of can be setup using docker-compose, however you need to specify the [web endpoint](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/docker-compose.yml#L13) of a running Moodle instance (.e.g., *https://moodle.tech4comp.dbis.rwth-aachen.de/*) and a [valid token](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/docker-compose.yml#L14), as well as the [domain](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/docker-compose.yml#L32) of a Learning Locker instance (e.g., *https://lrs.tech4comp.dbis.rwth-aachen.de/*) including respective [access credentials](https://github.com/rwth-acis/moodle-data-proxy/blob/develop/docker-compose.yml#L29-L30).
+You can read more about the Learning Locker credentials in the README of the [learning-locker-service](https://github.com/rwth-acis/learning-locker-service/tree/develop#how-to-run-using-docker).
+
+After cloning the repository, you can build the image using:
+```bash
+sudo docker build -t moodle-data-proxy:develop ./moodle-data-proxy
+```
+Now the image is referencable under __moodle-data-proxy:develop__ through the docker-compose file.
+Navigate into the _moodle-data-proxy directory_. First you have to once run:
+```bash
+sudo docker-compose up
+```
+to get everything in its initial state. THis will take some time because of the mysql database.
+
+Some of the services will now try to access a database called __LAS2PEERMON__ in _mysql_ that doesn't yet exist.
+They will exit with error codes, but this is fine. Once you see a reference to this database you can stop the run with _Ctrl + C_.
+
+Now we will create the database. First, start the _mysql_ container so that we can interact with it:
+```bash
+sudo docker start mysql
+```
+Then, to access it:
+```bash
+sudo docker exec -it mysql mysql -p
+```
+When prompted for the password enter _password_.
+Now the mysql console should start. Create the desired database using:
+
+```bash
+create database LAS2PEERMON;
+exit
+```
+This has now set up the database. Now running the command:
+```bash
+sudo docker-compose up
+```
+should run the system correctly. If the system seems to be deadlocked in some fashion, consider running:
+```bash
+sudo docker-compose up --force-recreate
+```
 
 List of generated xAPI Statement Verb/Object coverage
 -------------------

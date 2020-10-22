@@ -271,7 +271,7 @@ public class xAPIStatements {
 		definition.put("type", "https://w3id.org/xapi/seriousgames/activity-types/item");
 
 		JSONObject name = new JSONObject();
-		name.put("en-US", moduleData.getModname() + "_" + moduleData.getInstance());
+		name.put("en-US", moduleData.getName());
 		definition.put("name", name);
 
 		// definition.interactionType -- new property based on the latest xAPI validation

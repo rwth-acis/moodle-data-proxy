@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.Date;
-import java.text.SimpleDateFormat;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +44,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Contact;
 import io.swagger.annotations.Info;
 import io.swagger.annotations.SwaggerDefinition;
+import jdk.nashorn.internal.ir.ThrowNode;
 
 @Api
 @SwaggerDefinition(
@@ -95,7 +96,7 @@ public class MoodleDataProxyService extends RESTService {
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			Instant instant = timestamp.toInstant();
 			lastChecked = instant.getEpochSecond();
-			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
+//			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
 		}
 
 		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
@@ -193,17 +194,15 @@ public class MoodleDataProxyService extends RESTService {
 				try {
 					logger.info("Getting updates since " + lastChecked);
 					ArrayList<String> updates = statements.courseUpdatesSince(courseId, lastChecked);
-					short updateCounter = 0;
 					for (String update : updates) {
 						// handle timestamps from the future next time
-						if (checkXAPITimestamp(update) > now) {
-							logger.warning("Current timestamp (" + now + ") smaller than " +
-								"timestamp (" + checkXAPITimestamp(update) + ") of update: " + update);
+						if (checkXAPITimestamp(update) < now)
+							context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
+						else {
+							logger.warning("Update not being sent due to it happening in the future: " + update);
 						}
-						context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
-						updateCounter++;
 					}
-					logger.info("Sent " + updateCounter + " messages for course " + courseId);
+					logger.info("Sent " + updates.size() + " messages for course " + courseId);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -222,15 +221,26 @@ public class MoodleDataProxyService extends RESTService {
 				return 0;
 			}
 			if (statementJSON.isNull("timestamp")) {
-			}
-			try {
-				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-				Date dt = sdf.parse(statementJSON.getString("timestamp"));
-				return dt.getTime();
-			} catch (Exception e) {
-				logger.severe("Couldn't parse timestamp of message: " + message + e);
+				logger.severe("Couldn't get timestamp of message: " + message);
 				return 0;
 			}
+
+			Object timestampObject = statementJSON.get("timestamp");
+			if (timestampObject instanceof Integer) {
+				return (long) timestampObject;
+			}
+			else if (timestampObject instanceof String) {
+				try {
+					OffsetDateTime odt = OffsetDateTime.parse((String) timestampObject);
+					return odt.toEpochSecond();
+				} catch (Exception e) {
+					logger.severe("Could not parse DateTime format: " + message);
+				}
+			}
+			else {
+				logger.severe("Unkown timestamp format: " + message);
+			}
+			return 0;
 		}
 	}
 }

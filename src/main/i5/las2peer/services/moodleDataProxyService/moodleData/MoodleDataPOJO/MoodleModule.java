@@ -9,44 +9,46 @@ public class MoodleModule extends MoodleDataPOJO {
 	private int course;
 	private int instance;
 	private long added;
+	private String name;
 
 	public MoodleModule(JSONObject moduleData) {
 		if (moduleData.isNull("id")) {
 			logger.info("Cannot create MoodleModule: Missing id!");
 			this.id = 0;
-		}
-		else {
+		} else {
 			this.id = moduleData.getInt("id");
 		}
 		if (moduleData.isNull("modname")) {
 			logger.severe("Cannot create MoodleModule " + this.id + ": Missing modname!");
 			this.modname = "";
-		}
-		else {
+		} else {
 			this.modname = moduleData.getString("modname");
 		}
 		if (moduleData.isNull("course")) {
 			logger.warning("Missing expected field course for module " + this.id);
 			this.course = 0;
-		}
-		else {
+		} else {
 			this.course = moduleData.getInt("course");
 		}
 		if (moduleData.isNull("added")) {
 			logger.warning("Missing expected field added for module " + this.id);
 			this.added = 0;
-		}
-		else {
+		} else {
 			this.added = moduleData.getLong("added");
 		}
 		if (moduleData.isNull("instance")) {
 			logger.warning("Missing expected field instance for module " + this.id);
 			this.instance = 0;
-		}
-		else {
+		} else {
 			this.instance = moduleData.getInt("instance");
 		}
-  }
+		if (moduleData.isNull("name")) {
+			logger.warning("Missing expected field name for module " + this.id);
+			this.name = "";
+		} else {
+			this.name = moduleData.getString("name");
+		}
+	}
 
 	public String getModname() {
 		return this.modname;
@@ -72,15 +74,23 @@ public class MoodleModule extends MoodleDataPOJO {
 		this.instance = instance;
 	}
 
-  public long getAdded() {
-    return this.added;
-  }
+	public long getAdded() {
+		return this.added;
+	}
 
-  public void setAdded(long added) {
-    this.added = added;
-  }
+	public void setAdded(long added) {
+		this.added = added;
+	}
 
-  public void setCreated(long created) {
-    this.created = created;
-  }
+	public void setCreated(long created) {
+		this.created = created;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
 }
