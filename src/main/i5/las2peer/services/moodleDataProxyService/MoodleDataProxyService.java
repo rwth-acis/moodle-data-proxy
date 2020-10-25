@@ -201,7 +201,6 @@ public class MoodleDataProxyService extends RESTService {
 					ArrayList<String> updates = statements.courseUpdatesSince(courseId, lastChecked);
 					short updateCounter = 0;
 					for (String update : updates) {
-						logger.warning("Checking consent for update:" + update);
 						if (usesBlockchainVerification && !checkUserConsent(update)) {
 							// Skip this update if acting user did not consent to data extraction.
 							continue;
@@ -259,10 +258,8 @@ public class MoodleDataProxyService extends RESTService {
 				logger.warning("Message does not seem to contain personal data.");
 				return true;
 			} else {
-				JSONObject account = statementJSON.getJSONObject("actor").getJSONObject("account");
-				String userEmail = account.getString("name");
-				JSONObject action = statementJSON.getJSONObject("verb").getJSONObject("display");
-				String verb = action.getString("en-US");
+				String userEmail = statementJSON.getJSONObject("actor").getJSONObject("account").getString("name");
+				String verb = statementJSON.getJSONObject("verb").getJSONObject("display").getString("en-US");
 
 				logger.warning("Checking consent for email: " + userEmail + " and action: " + verb + " ...");
 				boolean consentGiven = false;
@@ -270,10 +267,9 @@ public class MoodleDataProxyService extends RESTService {
 					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "checkUserConsent", userEmail, verb);
 					if (consentGiven) {
 						// If consent for data extraction is given create log entry with included data
-						context.invokeInternally("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "createLogEntry", userEmail, verb, message);
+						context.invokeInternally("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "createLogEntry", message);
 					}
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					return false;
 				}
