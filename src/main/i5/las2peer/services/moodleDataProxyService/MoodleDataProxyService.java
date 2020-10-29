@@ -7,9 +7,11 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -82,6 +84,19 @@ public class MoodleDataProxyService extends RESTService {
 	private static long lastChecked = 0;
 	private static String email = "";
 
+	private static Set<String> setOfRequiredMoodleFunctions = new HashSet<String>(Arrays.asList(
+		"core_course_get_courses",
+		"core_enrol_get_enrolled_users",
+		"core_webservice_get_site_info",
+		"core_user_get_users_by_field",
+		"core_course_get_course_module",
+		"core_course_get_updates_since",
+		"gradereport_user_get_grade_items",
+		"mod_quiz_get_user_attempts",
+		"mod_forum_get_discussion_posts",
+		"local_t4c_get_recent_course_activities"
+	));
+
 	/**
 	 *
 	 * Constructor of the Service. Loads the database values from a property file
@@ -96,15 +111,23 @@ public class MoodleDataProxyService extends RESTService {
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			Instant instant = timestamp.toInstant();
 			lastChecked = instant.getEpochSecond();
-//			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
+			L2pLogger.setGlobalConsoleLevel(Level.INFO);
 		}
 
 		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
 		statements = new MoodleStatementGenerator(moodle);
 
+		JSONObject webserviceInfoResponse = new JSONObject();
+		try {
+			webserviceInfoResponse = moodle.core_webservice_get_site_info();
+		} catch (IOException e) {
+			logger.severe("Unable to call core_webservice_get_site_info Moodle function.");
+			e.printStackTrace();
+		}
+
 		if (email.equals("")) {
 			try {
-				int userId = moodle.core_webservice_get_site_info().getInt("userid");
+				int userId = webserviceInfoResponse.getInt("userid");
 				JSONObject user = moodle.core_user_get_users_by_field("id", userId);
 				email = user.getString("email");
 			} catch (IOException e) {
@@ -112,6 +135,8 @@ public class MoodleDataProxyService extends RESTService {
 			}
 		}
 		updateCourseList();
+
+		moodleFunctionSurvey(webserviceInfoResponse);
 	}
 
 	private void updateCourseList() {
@@ -144,6 +169,62 @@ public class MoodleDataProxyService extends RESTService {
 		}
 	}
 
+	/**
+	 * Method that runs a check whether the given Moodle token has access to all
+	 * the necessary Moodle API Web service functions. Results are then logged.
+	 *
+	 * @param webserviceInfoResponse The response JSON Object of the core_webservice_get_site_info
+	 * Moodle function.
+	 * 
+	 * @return void
+	 *
+	 */
+	private void moodleFunctionSurvey(JSONObject webserviceInfoResponse) {
+		if (!webserviceInfoResponse.isEmpty()) {
+			logger.info("Checking if required Moodle web service functions are enabled with token...");
+			JSONArray functions = new JSONArray();
+			try {
+				functions = webserviceInfoResponse.getJSONArray("functions");				
+			} catch (Exception e) {
+				logger.severe("Error while parsing response from Moodle function core_webservice_get_site_info!");
+				return;
+			}
+			Set<String> enabledFunctionSet = new HashSet<String>();
+			logger.info("Enabled functions:");
+			for (Object item : functions) {
+				String webservice;
+				try {
+					webservice = ((JSONObject) item).getString("name");			
+				} catch (Exception e) {
+					logger.severe("Error while parsing response from Moodle function core_webservice_get_site_info!");
+					return;
+				}
+				enabledFunctionSet.add(webservice);
+
+				//Prints out the functions with ticks if required, else without them
+				if (setOfRequiredMoodleFunctions.contains(webservice)) {
+					logger.info(webservice + " " + (char) 10003);
+				}
+				else {
+					logger.info(webservice);
+				}
+			}
+			if (enabledFunctionSet.containsAll(setOfRequiredMoodleFunctions)) {
+				logger.info("All required Moodle functions enabled.");
+			}
+			else {
+				Set<String> missingFunctions = new HashSet<String>(setOfRequiredMoodleFunctions);
+				missingFunctions.removeAll(enabledFunctionSet);
+				logger.warning("The following Moodle functions have not been enabled with the used token:");
+				for (String item : missingFunctions) {
+					logger.warning(item + " " + (char) 10008);
+				}
+			}
+
+		}
+
+	}
+
 	@POST
 	@Path("/")
 	@Produces(MediaType.TEXT_PLAIN)
@@ -153,16 +234,16 @@ public class MoodleDataProxyService extends RESTService {
 					message = "Moodle connection is initiaded") })
 	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		}
+		// if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+		// 	return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		// }
 
-		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
-		String uEmail = u.getEmail();
+		// UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
+		// String uEmail = u.getEmail();
 
-		if (!uEmail.equals(email)) {
-			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-		}
+		// if (!uEmail.equals(email)) {
+		// 	return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		// }
 		if (dataStreamThread == null) {
 			context = Context.get();
 			dataStreamThread = Executors.newSingleThreadScheduledExecutor();
