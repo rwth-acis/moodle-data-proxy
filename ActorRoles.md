@@ -6,7 +6,7 @@ To ensure interopability, the role is given with a name and ID inside the statem
 This document gives and overview of which IDs correspond to which role name, along with stating which source (here Moodle) the role was noted (or at least first discovered)
 which merited inclusion in the document.
 
-The intent is that once the system is expanded with other proxys (other than Moodle's) this document will be expanded to include possible roles from other platforms.
+The intent is that once the system is expanded with other proxys (other than Moodle's) this document will be expanded to include possible roles from other platforms. If a new role would be added to the list, it should first be checked if it is already included, or is comparable enough to the existing roles (e.g. "student" and "Student" or "STUDENT").
 
 | Role ID | Role Name | Source |
 | ------- | --------- | ------ |
