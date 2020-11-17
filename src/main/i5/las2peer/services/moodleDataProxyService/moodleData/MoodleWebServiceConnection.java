@@ -76,6 +76,17 @@ public class MoodleWebServiceConnection {
 			response.append('\r');
 		}
 		rd.close();
+
+		//DEBUG
+
+		// System.out.println();
+		// System.out.println(functionName + " " + urlParameters + ":");
+		// System.out.println(response.toString());
+		// System.out.println();
+
+		//end debug
+
+
 		return response.toString();
 	}
 

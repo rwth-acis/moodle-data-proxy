@@ -69,22 +69,22 @@ public class xAPIStatements {
 	}
 
   // create standard xAPI statement
-	public static String createXAPIStatement(MoodleUser moodleUser,
+	public static JSONObject createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleDataPOJO moodleModule, String moodleDomain) {
 		return createBasicXAPI(moodleUser, activity, moodleModule, moodleDomain,
-				moodleModule.getCreated()).toString();
+				moodleModule.getCreated());
 	}
 
 	// create xAPI statement with custom timestamp
-	public static String createXAPIStatement(MoodleUser moodleUser,
+	public static JSONObject createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleDataPOJO moodleModule, long viewed,
 			String moodleDomain) {
 		return createBasicXAPI(moodleUser, activity, moodleModule, moodleDomain,
-				viewed).toString();
+				viewed);
 	}
 
 	// create xAPI statement with custom timestamp and custom name
-	public static String createXAPIStatement(MoodleUser moodleUser,
+	public static JSONObject createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleDataPOJO moodleModule, long viewed, String newName,
 			String moodleDomain) {
 		JSONObject viewEvent = createBasicXAPI(moodleUser, activity, moodleModule,
@@ -98,11 +98,11 @@ public class xAPIStatements {
 			object.put("definition", definition);
 			viewEvent.put("object", object);
 		}
-		return viewEvent.toString();
+		return viewEvent;
 	}
 
 	// create xAPI statement from exercise with grade data
-	public static String createXAPIStatement(MoodleUser moodleUser,
+	public static JSONObject createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleExercise moodleExercise, MoodleGrade gradeData,
 			String moodleDomain) {
 		JSONObject statement = createBasicXAPI(moodleUser, activity, moodleExercise,
@@ -112,7 +112,7 @@ public class xAPIStatements {
 		JSONObject result = createResult(gradeData, moodleExercise.getGradepass());
 
 		statement.put("result", result);
-		return statement.toString();
+		return statement;
 	}
 
 	private static JSONObject createBasicXAPI(MoodleUser moodleUser,
