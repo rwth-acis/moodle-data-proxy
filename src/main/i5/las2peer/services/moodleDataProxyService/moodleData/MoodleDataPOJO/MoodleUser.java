@@ -2,6 +2,9 @@ package i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO;
 
 import org.json.JSONObject;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MoodleUser extends MoodleDataPOJO {
 
@@ -10,6 +13,8 @@ public class MoodleUser extends MoodleDataPOJO {
 	private String fullname;
 	private String lang;
 	private String country;
+	// CourseRoles = key : courseID, value : role ID
+	private Map<Integer, List<Integer>> courseRoles = new HashMap<>();
 
 	public MoodleUser(JSONObject userdata) {
 		if (userdata.isNull("id")) {
@@ -113,5 +118,13 @@ public class MoodleUser extends MoodleDataPOJO {
 			e.printStackTrace();
 		}
 		return token;
+	}
+
+	public void putCourseRoles(Integer courseID, List<Integer> roleID) {
+		this.courseRoles.put(courseID, roleID);
+	}
+
+	public List<Integer> getCourseRoles(Integer courseID) {
+		return this.courseRoles.get(courseID);
 	}
 }

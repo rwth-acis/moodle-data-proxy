@@ -76,6 +76,7 @@ public class MoodleWebServiceConnection {
 			response.append('\r');
 		}
 		rd.close();
+
 		return response.toString();
 	}
 
