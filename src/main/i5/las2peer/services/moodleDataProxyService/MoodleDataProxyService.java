@@ -111,7 +111,7 @@ public class MoodleDataProxyService extends RESTService {
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			Instant instant = timestamp.toInstant();
 			lastChecked = instant.getEpochSecond();
-			L2pLogger.setGlobalConsoleLevel(Level.INFO);
+			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
 		}
 
 		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
