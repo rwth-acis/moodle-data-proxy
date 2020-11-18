@@ -84,7 +84,7 @@ public class MoodleDataProxyService extends RESTService {
 	private static long lastChecked = 0;
 	private static String email = "";
 
-	private static Set<String> setOfRequiredMoodleFunctions = new HashSet<String>(Arrays.asList(
+	private final static Set<String> REQUIRED_MOODLE_FUNCTIONS = new HashSet<String>(Arrays.asList(
 		"core_course_get_courses",
 		"core_enrol_get_enrolled_users",
 		"core_webservice_get_site_info",
@@ -202,18 +202,18 @@ public class MoodleDataProxyService extends RESTService {
 				enabledFunctionSet.add(webservice);
 
 				//Prints out the functions with ticks if required, else without them
-				if (setOfRequiredMoodleFunctions.contains(webservice)) {
+				if (REQUIRED_MOODLE_FUNCTIONS.contains(webservice)) {
 					logger.info(webservice + " " + (char) 10003);
 				}
 				else {
 					logger.info(webservice);
 				}
 			}
-			if (enabledFunctionSet.containsAll(setOfRequiredMoodleFunctions)) {
+			if (enabledFunctionSet.containsAll(REQUIRED_MOODLE_FUNCTIONS)) {
 				logger.info("All required Moodle functions enabled.");
 			}
 			else {
-				Set<String> missingFunctions = new HashSet<String>(setOfRequiredMoodleFunctions);
+				Set<String> missingFunctions = new HashSet<String>(REQUIRED_MOODLE_FUNCTIONS);
 				missingFunctions.removeAll(enabledFunctionSet);
 				logger.warning("The following Moodle functions have not been enabled with the used token:");
 				for (String item : missingFunctions) {
@@ -234,16 +234,16 @@ public class MoodleDataProxyService extends RESTService {
 					message = "Moodle connection is initiaded") })
 	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-		// if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-		// 	return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		// }
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
 
-		// UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
-		// String uEmail = u.getEmail();
+		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
+		String uEmail = u.getEmail();
 
-		// if (!uEmail.equals(email)) {
-		// 	return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-		// }
+		if (!uEmail.equals(email)) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		}
 		if (dataStreamThread == null) {
 			context = Context.get();
 			dataStreamThread = Executors.newSingleThreadScheduledExecutor();

@@ -153,7 +153,7 @@ public class xAPIStatements {
 
 	private static JSONObject createDiscussion(MoodleDiscussion discussionData, String domainName) {
 		JSONObject object = new JSONObject();
-		object.put("id", domainName + "/mod/forum/discuss.php?d=" + discussionData.getDiscussion());
+		object.put("id", domainName + "mod/forum/discuss.php?d=" + discussionData.getDiscussion());
 
 		JSONObject definition = new JSONObject();
 		definition.put("type", "http://id.tincanapi.com/activitytype/discussion");
@@ -177,7 +177,7 @@ public class xAPIStatements {
 
 	private static JSONObject createPost(MoodlePost postData, String domainName) {
 		JSONObject object = new JSONObject();
-		object.put("id", domainName + "/mod/forum/discuss.php?d=" +
+		object.put("id", domainName + "mod/forum/discuss.php?d=" +
 			postData.getDiscussionid() + "#p" + postData.getId());
 
 		JSONObject definition = new JSONObject();
@@ -203,7 +203,7 @@ public class xAPIStatements {
 	private static JSONObject createExercise(MoodleExercise exerciseData,
 			String domainName) {
 		JSONObject object = new JSONObject();
-		object.put("id", domainName + "/mod/" + exerciseData.getModname() +
+		object.put("id", domainName + "mod/" + exerciseData.getModname() +
 			"/view.php?id=" + exerciseData.getId());
 
 		JSONObject definition = new JSONObject();
@@ -264,7 +264,7 @@ public class xAPIStatements {
 	private static JSONObject createModule(MoodleModule moduleData,
 			String domainName) {
 		JSONObject object = new JSONObject();
-		object.put("id", domainName + "/mod/" + moduleData.getModname() +
+		object.put("id", domainName + "mod/" + moduleData.getModname() +
 				"/view.php?id=" + moduleData.getId());
 
 		JSONObject definition = new JSONObject();

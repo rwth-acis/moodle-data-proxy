@@ -36,19 +36,22 @@ import java.util.logging.Level;
 
 public class MoodleStatementGenerator {
 	// ActorRoles document defines this map
-	private final static Map<String, Integer> ROLE_NAME_TO_ID = new HashMap<String, Integer>() {{
-		put("student", 1);
-		put("manager", 2);
-		put("teacher", 3);
-		put("non-editing teacher", 4);
-	}};
-	private final static Map<Integer, String> ROLE_ID_TO_NAME = new HashMap<Integer, String>() {{
-		put(1, "student");
-		put(2, "manager");
-		put(3, "teacher");
-		put(4, "non-editing teacher");
-	}};
-
+	private final static Map<String, Integer> ROLE_NAME_TO_ID = new HashMap<String, Integer>() {
+		{
+			put("student", 1);
+			put("manager", 2);
+			put("teacher", 3);
+			put("non-editing teacher", 4);
+		}
+	};
+	private final static Map<Integer, String> ROLE_ID_TO_NAME = new HashMap<Integer, String>() {
+		{
+			put(1, "student");
+			put(2, "manager");
+			put(3, "teacher");
+			put(4, "non-editing teacher");
+		}
+	};
 
 	private static MoodleWebServiceConnection moodle;
 	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataPOJO.class.getName());
@@ -105,7 +108,8 @@ public class MoodleStatementGenerator {
 	 * @return Returns an ArrayList of new discussions and discussion posts
 	 * @throws IOException if an I/O exception occurs.
 	 */
-	private static ArrayList<String> getForumUpdates(int courseID, ArrayList<Integer> forumids, long since) throws IOException {
+	private static ArrayList<String> getForumUpdates(int courseID, ArrayList<Integer> forumids, long since)
+			throws IOException {
 		ArrayList<String> forumUpdates = new ArrayList<String>();
 		for (int forumid : forumids) {
 			JSONArray discussions = moodle.mod_forum_get_forum_discussions(forumid);
@@ -120,7 +124,7 @@ public class MoodleStatementGenerator {
 					MoodleDiscussion object = new MoodleDiscussion(discussion);
 					JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "posted", object,
 							moodle.getDomainName());
-					addStatementActorRole(builtStatement, creatorId, courseID);
+					addStatementContextExtensions(builtStatement, creatorId, courseID);
 					forumUpdates.add(builtStatement.toString() + "*" + actor.getMoodleToken());
 				}
 
@@ -135,7 +139,7 @@ public class MoodleStatementGenerator {
 							MoodlePost object = new MoodlePost(post);
 							JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "replied", object,
 									moodle.getDomainName());
-							addStatementActorRole(builtStatement, creatorId, courseID);
+							addStatementContextExtensions(builtStatement, creatorId, courseID);
 							forumUpdates.add(builtStatement.toString() + "*" + actor.getMoodleToken());
 						}
 					}
@@ -173,19 +177,20 @@ public class MoodleStatementGenerator {
 				if (!submission.isNull("gradedategraded") && submission.getLong("gradedategraded") > since) {
 					MoodleGrade grade = new MoodleGrade(submission);
 					if (!submission.isNull("modname") && submission.getString("modname") == "quiz") {
-						JSONArray attempts = moodle.mod_quiz_get_user_attempts(submission.getInt("iteminstance"), userID);
+						JSONArray attempts = moodle.mod_quiz_get_user_attempts(submission.getInt("iteminstance"),
+								userID);
 						JSONObject attempt = (JSONObject) attempts.get(0);
 						grade.setTimestart(attempt.getLong("timestart"));
 						grade.setTimefinish(attempt.getLong("timefinish"));
 					}
 					JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "completed", exercise, grade,
 							moodle.getDomainName());
-					addStatementActorRole(builtStatement, userID, courseID);
+					addStatementContextExtensions(builtStatement, userID, courseID);
 					submissions.add(builtStatement.toString() + "*" + actor.getMoodleToken());
 				} else {
 					JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "submitted", exercise,
 							submission.getLong("gradedatesubmitted"), moodle.getDomainName());
-					addStatementActorRole(builtStatement, userID, courseID);
+					addStatementContextExtensions(builtStatement, userID, courseID);
 					submissions.add(builtStatement.toString() + "*" + actor.getMoodleToken());
 				}
 			}
@@ -217,7 +222,7 @@ public class MoodleStatementGenerator {
 			}
 			JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "viewed", object,
 					event.getLong("timecreated"), overwriteName, moodle.getDomainName());
-			addStatementActorRole(builtStatement, userID, courseID);
+			addStatementContextExtensions(builtStatement, userID, courseID);
 			viewEvents.add(builtStatement.toString() + "*" + actor.getMoodleToken());
 		}
 		return viewEvents;
@@ -291,11 +296,17 @@ public class MoodleStatementGenerator {
 		return module;
 	}
 
+	/**
+	 * Function retrieves roles of all enrolled users in a Moodle course.
+	 * @param courseID
+	 * @return A map where the key is the Moodle user ID and the value is
+	 * the JSONArray "roles" from the core_enrol_get_enrolled_users Moodle function
+	 * call
+	 */
 	private static Map<Integer, JSONArray> getUserRoles(int courseID) {
 		Map<Integer, JSONArray> retVal = new HashMap<>();
 		try {
 			JSONArray enrolledUsers = moodle.core_enrol_get_enrolled_users(courseID);
-			System.out.println(enrolledUsers.toString());
 			for (Object user : enrolledUsers) {
 				JSONObject userJSON = (JSONObject) user;
 				Integer userID = userJSON.getInt("id");
@@ -308,10 +319,18 @@ public class MoodleStatementGenerator {
 		return retVal;
 	}
 
-	private static void addStatementActorRole(JSONObject statement, int userID, int courseID) {
+	/**
+	 * Add context extensions to a statement. This includes actor roles and course
+	 * info.
+	 * 
+	 * @param statement The statement to be edited.
+	 * @param userID    User ID on Moodle.
+	 * @param courseID  Course ID on Moodle.
+	 */
+	private static void addStatementContextExtensions(JSONObject statement, int userID, int courseID) {
+		//prepare roles
 		MoodleUser user = userList.get(userID);
 		List<Integer> roleList = user.getCourseRoles(courseID);
-
 		JSONArray rolesJSON = new JSONArray();
 		for (int roleID : roleList) {
 			JSONObject roleJSON = new JSONObject();
@@ -319,9 +338,15 @@ public class MoodleStatementGenerator {
 			roleJSON.put("rolename", ROLE_ID_TO_NAME.get(roleID));
 			rolesJSON.put(roleJSON);
 		}
+		//prepare course info
+		JSONObject courseInfoJSON = new JSONObject();
+		courseInfoJSON.put("courseid", courseID);
+		courseInfoJSON.put("courseplatform", "Moodle");
 
 		JSONObject extensionJSON = new JSONObject();
 		extensionJSON.put("https://tech4comp.de/xapi/context/extensions/actorRoles", rolesJSON);
+		extensionJSON.put("https://tech4comp.de/xapi/context/extensions/courseInfo", courseInfoJSON);		
+
 		JSONObject contextJSON = new JSONObject();
 		contextJSON.put("extensions", extensionJSON);
 		statement.put("context", contextJSON);
