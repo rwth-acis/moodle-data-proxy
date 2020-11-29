@@ -264,10 +264,10 @@ public class MoodleDataProxyService extends RESTService {
 				logger.warning("Checking consent for email: " + userEmail + " and action: " + verb + " ...");
 				boolean consentGiven = false;
 				try {
-					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "checkUserConsent", userEmail, verb);
+					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.0", "checkUserConsent", userEmail, verb);
 					if (consentGiven) {
 						// If consent for data extraction is given create log entry with included data
-						context.invokeInternally("i5.las2peer.services.privacyControl.PrivacyControlService@0.1.0", "createLogEntry", message);
+						context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.0", "createLogEntry", message);
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
