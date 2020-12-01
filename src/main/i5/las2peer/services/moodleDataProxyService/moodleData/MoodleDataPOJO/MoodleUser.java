@@ -11,8 +11,6 @@ public class MoodleUser extends MoodleDataPOJO {
 	private String email;
 	private final String moodleToken;
 	private String fullname;
-	private String lang;
-	private String country;
 	// CourseRoles = key : courseID, value : role ID
 	private Map<Integer, List<Integer>> courseRoles = new HashMap<>();
 
@@ -45,20 +43,6 @@ public class MoodleUser extends MoodleDataPOJO {
 		else {
 			this.fullname = userdata.getString("fullname");
 		}
-		if (userdata.isNull("country")) {
-			logger.warning("Missing expected field country for user " + this.id);
-			this.country = "";
-		}
-		else {
-			this.country = userdata.getString("country");
-		}
-		if (userdata.isNull("lang")) {
-			logger.warning("Missing expected field lang for user " + this.id);
-			this.lang = "";
-		}
-		else {
-			this.lang = userdata.getString("lang");
-		}
   }
 
 	public String getMoodleToken() {
@@ -79,22 +63,6 @@ public class MoodleUser extends MoodleDataPOJO {
 
 	public void setFullname(String fullname) {
 		this.fullname = fullname;
-	}
-
-	public String getCountry() {
-		return country;
-	}
-
-	public void setCountry(String country) {
-		this.country = country;
-	}
-
-	public String getLang() {
-		return lang;
-	}
-
-	public void setLang(String lang) {
-		this.lang = lang;
 	}
 
 	// given a user object, this function returns either the 'idnumber'
