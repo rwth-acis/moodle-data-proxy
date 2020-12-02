@@ -72,6 +72,7 @@ public class MoodleDataProxyService extends RESTService {
 	private String moodleDomain;
 	private String moodleToken;
 	private String courseList;
+	private boolean usesBlockchainVerification;
 
 	private static HashSet<Integer> courses = new HashSet<Integer>();
 	private static ScheduledExecutorService dataStreamThread = null;
@@ -241,8 +242,14 @@ public class MoodleDataProxyService extends RESTService {
 		// 	return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
 		// }
 
+
 		// UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
-		// String uEmail = u.getEmail();
+		// String uEmail = u.getEmail()
+  
+		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
+		if (usesBlockchainVerification) {
+			logger.warning("Proxy service uses blockchain verification and consent checks");
+		}
 
 		// if (!uEmail.equals(email)) {
 		// 	return Response.status(Status.FORBIDDEN).entity("Access denied").build();
@@ -282,6 +289,11 @@ public class MoodleDataProxyService extends RESTService {
 					logger.info("Getting updates since " + lastChecked);
 					ArrayList<String> updates = statements.courseUpdatesSince(courseID, lastChecked);
 					for (String update : updates) {
+						if (usesBlockchainVerification && !checkUserConsent(update)) {
+							// Skip this update if acting user did not consent to data extraction.
+							continue;
+						}
+
 						// handle timestamps from the future next time
 						if (checkXAPITimestamp(update) < now)
 							context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
@@ -302,7 +314,7 @@ public class MoodleDataProxyService extends RESTService {
 			String statement = message.split("\\*")[0];
 			JSONObject statementJSON;
 			try {
-				 statementJSON = new JSONObject(statement);
+				statementJSON = new JSONObject(statement);
 			} catch (Exception e) {
 				logger.severe("Error pasing message to JSON: " + message);
 				return 0;
@@ -328,6 +340,40 @@ public class MoodleDataProxyService extends RESTService {
 				logger.severe("Unkown timestamp format: " + message);
 			}
 			return 0;
+		}
+
+		private boolean checkUserConsent(String message) {
+			String statement = message.split("\\*")[0];
+			JSONObject statementJSON;
+			try {
+				statementJSON = new JSONObject(statement);
+			} catch (Exception e) {
+				logger.severe("Error parsing message to JSON: " + message);
+				return false;
+			}
+
+			if (statementJSON.isNull("actor")) {
+				logger.warning("Message does not seem to contain personal data.");
+				return true;
+			} else {
+				String userEmail = statementJSON.getJSONObject("actor").getJSONObject("account").getString("name");
+				String verb = statementJSON.getJSONObject("verb").getJSONObject("display").getString("en-US");
+
+				logger.warning("Checking consent for email: " + userEmail + " and action: " + verb + " ...");
+				boolean consentGiven = false;
+				try {
+					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.0", "checkUserConsent", userEmail, verb);
+					if (consentGiven) {
+						// If consent for data extraction is given create log entry with included data
+						context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.0", "createLogEntry", message);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					return false;
+				}
+				logger.warning("Consent given: " + consentGiven);
+				return consentGiven;
+			}
 		}
 	}
 

@@ -46,9 +46,10 @@ Sending Moodle data to MobSOS
 -----------------------
 
 Send Moodle data to MobSOS is facilitated by a thread which is executed once every minute to retrieve new activities.
-The thread has to be started after the node was successfully started and connected to the las2peer network via a POST request.
+The thread has to be started using a POST request after the node was successfully started and connected to the las2peer network.
 The POST request has to be sent by a registered las2peer user with the same email address as the one registered to the provided moodleToken.
-Send this request to the following path:
+How to send the POST request as a registered las2peer user is described [here](https://github.com/rwth-acis/las2peer/tree/master/webconnector#using-oidc-with-las2peer).
+Send the request to the following path using the necessary authorization:
 ```
 POST <service-address>/moodle/
 ```
