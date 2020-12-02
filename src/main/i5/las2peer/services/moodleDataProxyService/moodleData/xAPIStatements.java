@@ -69,22 +69,22 @@ public class xAPIStatements {
 	}
 
   // create standard xAPI statement
-	public static String createXAPIStatement(MoodleUser moodleUser,
+	public static JSONObject createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleDataPOJO moodleModule, String moodleDomain) {
 		return createBasicXAPI(moodleUser, activity, moodleModule, moodleDomain,
-				moodleModule.getCreated()).toString();
+				moodleModule.getCreated());
 	}
 
 	// create xAPI statement with custom timestamp
-	public static String createXAPIStatement(MoodleUser moodleUser,
+	public static JSONObject createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleDataPOJO moodleModule, long viewed,
 			String moodleDomain) {
 		return createBasicXAPI(moodleUser, activity, moodleModule, moodleDomain,
-				viewed).toString();
+				viewed);
 	}
 
 	// create xAPI statement with custom timestamp and custom name
-	public static String createXAPIStatement(MoodleUser moodleUser,
+	public static JSONObject createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleDataPOJO moodleModule, long viewed, String newName,
 			String moodleDomain) {
 		JSONObject viewEvent = createBasicXAPI(moodleUser, activity, moodleModule,
@@ -98,11 +98,11 @@ public class xAPIStatements {
 			object.put("definition", definition);
 			viewEvent.put("object", object);
 		}
-		return viewEvent.toString();
+		return viewEvent;
 	}
 
 	// create xAPI statement from exercise with grade data
-	public static String createXAPIStatement(MoodleUser moodleUser,
+	public static JSONObject createXAPIStatement(MoodleUser moodleUser,
 			String activity, MoodleExercise moodleExercise, MoodleGrade gradeData,
 			String moodleDomain) {
 		JSONObject statement = createBasicXAPI(moodleUser, activity, moodleExercise,
@@ -112,7 +112,7 @@ public class xAPIStatements {
 		JSONObject result = createResult(gradeData, moodleExercise.getGradepass());
 
 		statement.put("result", result);
-		return statement.toString();
+		return statement;
 	}
 
 	private static JSONObject createBasicXAPI(MoodleUser moodleUser,
@@ -153,7 +153,7 @@ public class xAPIStatements {
 
 	private static JSONObject createDiscussion(MoodleDiscussion discussionData, String domainName) {
 		JSONObject object = new JSONObject();
-		object.put("id", domainName + "/mod/forum/discuss.php?d=" + discussionData.getDiscussion());
+		object.put("id", domainName + "mod/forum/discuss.php?d=" + discussionData.getDiscussion());
 
 		JSONObject definition = new JSONObject();
 		definition.put("type", "http://id.tincanapi.com/activitytype/discussion");
@@ -177,7 +177,7 @@ public class xAPIStatements {
 
 	private static JSONObject createPost(MoodlePost postData, String domainName) {
 		JSONObject object = new JSONObject();
-		object.put("id", domainName + "/mod/forum/discuss.php?d=" +
+		object.put("id", domainName + "mod/forum/discuss.php?d=" +
 			postData.getDiscussionid() + "#p" + postData.getId());
 
 		JSONObject definition = new JSONObject();
@@ -203,7 +203,7 @@ public class xAPIStatements {
 	private static JSONObject createExercise(MoodleExercise exerciseData,
 			String domainName) {
 		JSONObject object = new JSONObject();
-		object.put("id", domainName + "/mod/" + exerciseData.getModname() +
+		object.put("id", domainName + "mod/" + exerciseData.getModname() +
 			"/view.php?id=" + exerciseData.getId());
 
 		JSONObject definition = new JSONObject();
@@ -264,14 +264,14 @@ public class xAPIStatements {
 	private static JSONObject createModule(MoodleModule moduleData,
 			String domainName) {
 		JSONObject object = new JSONObject();
-		object.put("id", domainName + "/mod/" + moduleData.getModname() +
+		object.put("id", domainName + "mod/" + moduleData.getModname() +
 				"/view.php?id=" + moduleData.getId());
 
 		JSONObject definition = new JSONObject();
 		definition.put("type", "https://w3id.org/xapi/seriousgames/activity-types/item");
 
 		JSONObject name = new JSONObject();
-		name.put("en-US", moduleData.getModname() + "_" + moduleData.getInstance());
+		name.put("en-US", moduleData.getName());
 		definition.put("name", name);
 
 		// definition.interactionType -- new property based on the latest xAPI validation

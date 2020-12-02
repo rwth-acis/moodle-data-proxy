@@ -10,11 +10,16 @@ import i5.las2peer.testing.TestSuite;
 
 public class MoodleDataProxyServiceTest {
 
+  private final String MOODLE_TOKEN = "";
+  private final String MOODLE_DOMAIN = "";
+  private final int COURSE_ID = 0;
+  private final long TIMESTAMP = 728632800;
+
   @Test
   public void testStatementGenerator() throws IOException {
-    MoodleWebServiceConnection moodle = new MoodleWebServiceConnection("424f0b29c3d5944506ea9ca8b9dec502",
-      "https://moodle.tech4comp.dbis.rwth-aachen.de");
-    MoodleStatementGenerator statements = new MoodleStatementGenerator(moodle);
-    System.out.println(statements.courseUpdatesSince(10, 1595931803));
+    System.out.println("Test currently deactivated!");
+//    MoodleWebServiceConnection moodle = new MoodleWebServiceConnection(MOODLE_TOKEN,MOODLE_DOMAIN);
+//    MoodleStatementGenerator statements = new MoodleStatementGenerator(moodle);
+//    System.out.println(statements.courseUpdatesSince(COURSE_ID,TIMESTAMP));
   }
 }
