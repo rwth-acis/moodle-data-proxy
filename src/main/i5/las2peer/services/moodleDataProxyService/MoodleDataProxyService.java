@@ -39,6 +39,7 @@ import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.security.UserAgentImpl;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleWebServiceConnection;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUser;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleStatementGenerator;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
@@ -74,6 +75,7 @@ public class MoodleDataProxyService extends RESTService {
 
 	private static HashSet<Integer> courses = new HashSet<Integer>();
 	private static ScheduledExecutorService dataStreamThread = null;
+	private static ScheduledExecutorService userUpdateThread = null;
 
 	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataProxyService.class.getName());
 	private static MoodleWebServiceConnection moodle = null;
@@ -81,6 +83,7 @@ public class MoodleDataProxyService extends RESTService {
 	private static Context context = null;
 
 	private final static int MOODLE_DATA_STREAM_PERIOD = 60; // Every minute
+	private final static int MOODLE_USER_INFO_UPDATE_PERIOD = 3600; // Every hour
 	private static long lastChecked = 0;
 	private static String email = "";
 
@@ -111,7 +114,7 @@ public class MoodleDataProxyService extends RESTService {
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			Instant instant = timestamp.toInstant();
 			lastChecked = instant.getEpochSecond();
-			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
+			L2pLogger.setGlobalConsoleLevel(Level.INFO);
 		}
 
 		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
@@ -127,8 +130,8 @@ public class MoodleDataProxyService extends RESTService {
 
 		if (email.equals("")) {
 			try {
-				int userId = webserviceInfoResponse.getInt("userid");
-				JSONObject user = moodle.core_user_get_users_by_field("id", userId);
+				int userID = webserviceInfoResponse.getInt("userid");
+				JSONObject user = moodle.core_user_get_users_by_field("id", userID);
 				email = user.getString("email");
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -234,20 +237,23 @@ public class MoodleDataProxyService extends RESTService {
 					message = "Moodle connection is initiaded") })
 	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		}
+		// if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+		// 	return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		// }
 
-		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
-		String uEmail = u.getEmail();
+		// UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
+		// String uEmail = u.getEmail();
 
-		if (!uEmail.equals(email)) {
-			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-		}
+		// if (!uEmail.equals(email)) {
+		// 	return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		// }
 		if (dataStreamThread == null) {
 			context = Context.get();
 			dataStreamThread = Executors.newSingleThreadScheduledExecutor();
 			dataStreamThread.scheduleAtFixedRate(new DataStreamThread(), 0, MOODLE_DATA_STREAM_PERIOD,
+					TimeUnit.SECONDS);
+			userUpdateThread = Executors.newSingleThreadScheduledExecutor();
+			userUpdateThread.scheduleAtFixedRate(new UserUpdateThread(), 0, MOODLE_USER_INFO_UPDATE_PERIOD,
 					TimeUnit.SECONDS);
 			return Response.status(Status.OK).entity("Thread started.").build();
 		} else {
@@ -256,8 +262,8 @@ public class MoodleDataProxyService extends RESTService {
 	}
 
 	/**
-	 * Thread which periodically checks all courses for new quiz attempts,
-	 * creates xAPI statements of new attempts and sends them to Mobsos.
+	 * Thread which periodically checks all courses for events,
+	 * creates xAPI statements of new events and sends them to Mobsos.
 	 *
 	 * @return void
 	 *
@@ -271,10 +277,10 @@ public class MoodleDataProxyService extends RESTService {
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			long now = timestamp.toInstant().getEpochSecond();
 
-			for (int courseId : courses) {
+			for (int courseID : courses) {
 				try {
 					logger.info("Getting updates since " + lastChecked);
-					ArrayList<String> updates = statements.courseUpdatesSince(courseId, lastChecked);
+					ArrayList<String> updates = statements.courseUpdatesSince(courseID, lastChecked);
 					for (String update : updates) {
 						// handle timestamps from the future next time
 						if (checkXAPITimestamp(update) < now)
@@ -283,7 +289,7 @@ public class MoodleDataProxyService extends RESTService {
 							logger.warning("Update not being sent due to it happening in the future: " + update);
 						}
 					}
-					logger.info("Sent " + updates.size() + " messages for course " + courseId);
+					logger.info("Sent " + updates.size() + " messages for course " + courseID);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -323,5 +329,63 @@ public class MoodleDataProxyService extends RESTService {
 			}
 			return 0;
 		}
+	}
+
+	/**
+	 * Thread which periodically updates cached user info.
+	 *
+	 * @return void
+	 *
+	 */
+	private class UserUpdateThread implements Runnable {
+
+		@Override
+		public void run() {
+			Map<Integer, MoodleUser> tmpUserMap = new HashMap<>();
+
+			for (int courseID : courses) {
+				JSONArray usersJSON;
+				try {
+					usersJSON = moodle.core_enrol_get_enrolled_users(courseID);	
+				} catch (Exception e) {
+					logger.severe("Error while reaching core_enrol_get_enrolled_users while updating user info for course ID:"
+						+ courseID);
+					continue;
+				}
+				
+				for (Object user : usersJSON) {
+					JSONObject userJSON = (JSONObject) user;
+					int userID;
+					try {
+						userID = userJSON.getInt("id");
+					} catch (Exception e) {
+						logger.severe("Could not get user ID from core_enrol_get_enrolled_users while updating user. "
+						+ e.getStackTrace());
+						continue;
+					}
+					MoodleUser muser;
+					if (!tmpUserMap.containsKey(userID)) {
+						muser = new MoodleUser(userJSON);
+					}
+					else {
+						muser = tmpUserMap.get(userID);
+					}
+					// add roles
+					JSONArray rolesJSON = null;
+					try {
+						rolesJSON = userJSON.getJSONArray("roles");
+						muser.putCourseRoles(courseID, rolesJSON);
+					} catch (Exception e) {
+						logger.severe("Could not get user role from core_enrol_get_enrolled_users while updating user ID: "
+						+ userID + " " + e.getStackTrace());
+					}
+					
+					tmpUserMap.put(userID, muser);
+				}
+			}
+			
+			statements.setUserMap(tmpUserMap);
+		}
+
 	}
 }

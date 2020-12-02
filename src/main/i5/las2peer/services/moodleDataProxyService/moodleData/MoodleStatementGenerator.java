@@ -35,32 +35,23 @@ import i5.las2peer.logging.L2pLogger;
 import java.util.logging.Level;
 
 public class MoodleStatementGenerator {
-	// ActorRoles document defines this map
-	private final static Map<String, Integer> ROLE_NAME_TO_ID = new HashMap<String, Integer>() {
-		{
-			put("student", 1);
-			put("manager", 2);
-			put("teacher", 3);
-			put("non-editing teacher", 4);
-		}
-	};
-	private final static Map<Integer, String> ROLE_ID_TO_NAME = new HashMap<Integer, String>() {
-		{
-			put(1, "student");
-			put(2, "manager");
-			put(3, "teacher");
-			put(4, "non-editing teacher");
-		}
-	};
+	
 
 	private static MoodleWebServiceConnection moodle;
 	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataPOJO.class.getName());
 
 	// courses, users, and assignments are cached
-	private static Map<Integer, MoodleCourse> courseList = new HashMap<Integer, MoodleCourse>();
-	private static Map<Integer, MoodleUser> userList = new HashMap<Integer, MoodleUser>();
-	private static Map<Integer, MoodleDataPOJO> modList = new HashMap<Integer, MoodleDataPOJO>();
+	private static Map<Integer, MoodleUser> userMap = new HashMap<Integer, MoodleUser>();
+	private static Map<Integer, MoodleDataPOJO> modMap = new HashMap<Integer, MoodleDataPOJO>();
 	private static Map<Integer, JSONArray> roleMap = new HashMap<>();
+
+	public static Map<Integer, MoodleUser> getUserMap() {
+		return userMap;
+	}
+
+	public static void setUserMap(Map<Integer, MoodleUser> userMap) {
+		MoodleStatementGenerator.userMap = userMap;
+	}
 
 	public MoodleStatementGenerator(MoodleWebServiceConnection moodle) {
 		MoodleStatementGenerator.moodle = moodle;
@@ -229,7 +220,7 @@ public class MoodleStatementGenerator {
 	}
 
 	/**
-	 * Function that retrieves the user from the cached userList if available, else
+	 * Function that retrieves the user from the cached userMap if available, else
 	 * creates it with data from Moodle.
 	 * 
 	 * @param userid id of the user whose information should be returned
@@ -237,7 +228,7 @@ public class MoodleStatementGenerator {
 	 * @throws IOException if an I/O exception occurs.
 	 */
 	private static MoodleUser getUser(int userID, int courseID) throws IOException {
-		MoodleUser user = userList.get(userID);
+		MoodleUser user = userMap.get(userID);
 		if (user == null) {
 			JSONObject userJSON = moodle.core_user_get_users_by_field("id", userID);
 			if (userJSON == null) {
@@ -245,19 +236,12 @@ public class MoodleStatementGenerator {
 				return null;
 			}
 			user = new MoodleUser(userJSON);
-			userList.put(userID, user);
+			userMap.put(userID, user);
 		}
 		// Add roles to user
 		if (user.getCourseRoles(courseID) == null) {
 			JSONArray rolesJSON = roleMap.get(user.getId());
-			ArrayList<Integer> tmp = new ArrayList<>();
-			for (Object role : rolesJSON) {
-				JSONObject roleJSON = (JSONObject) role;
-				String roleName = roleJSON.getString("shortname");
-				Integer roleID = ROLE_NAME_TO_ID.get(roleName);
-				tmp.add(roleID);
-			}
-			user.putCourseRoles(courseID, tmp);
+			user.putCourseRoles(courseID, rolesJSON);
 		}
 		return user;
 	}
@@ -268,7 +252,7 @@ public class MoodleStatementGenerator {
 	 * @throws IOException if an I/O exception occurs.
 	 */
 	private static MoodleDataPOJO getModule(int cmid) throws IOException {
-		MoodleDataPOJO module = modList.get(cmid);
+		MoodleDataPOJO module = modMap.get(cmid);
 		if (module == null) {
 			JSONObject moduleJSON = moodle.core_course_get_course_module(cmid);
 			if (moduleJSON == null) {
@@ -291,7 +275,7 @@ public class MoodleStatementGenerator {
 						return null;
 					}
 			}
-			modList.put(cmid, module);
+			modMap.put(cmid, module);
 		}
 		return module;
 	}
@@ -309,8 +293,22 @@ public class MoodleStatementGenerator {
 			JSONArray enrolledUsers = moodle.core_enrol_get_enrolled_users(courseID);
 			for (Object user : enrolledUsers) {
 				JSONObject userJSON = (JSONObject) user;
-				Integer userID = userJSON.getInt("id");
-				JSONArray roles = userJSON.getJSONArray("roles");
+				Integer userID;
+				try {
+					userID = userJSON.getInt("id");
+				} catch (JSONException e) {
+					logger.severe("Could not get user ID from core_enrol_get_enrolled_users while parsing roles. "
+						+ e.getStackTrace());
+					continue;
+				}
+				JSONArray roles;
+				try {
+					roles = userJSON.getJSONArray("roles");
+				} catch (JSONException e) {
+					logger.severe("Could not get user role from core_enrol_get_enrolled_users while parsing roles. User ID: "
+						+ userID);
+					continue;
+				}
 				retVal.put(userID, roles);
 			}
 		} catch (Exception e) {
@@ -328,31 +326,28 @@ public class MoodleStatementGenerator {
 	 * @param courseID  Course ID on Moodle.
 	 */
 	private static void addStatementContextExtensions(JSONObject statement, int userID, int courseID) {
-		//prepare roles
-		MoodleUser user = userList.get(userID);
+		// prepare roles
+		MoodleUser user = userMap.get(userID);
 		List<Integer> roleList = user.getCourseRoles(courseID);
 		JSONArray rolesJSON = new JSONArray();
 		for (int roleID : roleList) {
 			JSONObject roleJSON = new JSONObject();
 			roleJSON.put("roleid", roleID);
-			roleJSON.put("rolename", ROLE_ID_TO_NAME.get(roleID));
+			roleJSON.put("rolename", MoodleUser.getRoleName(roleID));
 			rolesJSON.put(roleJSON);
 		}
-		//prepare course info
+		// prepare course info
 		JSONObject courseInfoJSON = new JSONObject();
 		courseInfoJSON.put("courseid", courseID);
 		courseInfoJSON.put("courseplatform", "Moodle");
 
 		JSONObject extensionJSON = new JSONObject();
 		extensionJSON.put("https://tech4comp.de/xapi/context/extensions/actorRoles", rolesJSON);
-		extensionJSON.put("https://tech4comp.de/xapi/context/extensions/courseInfo", courseInfoJSON);		
+		extensionJSON.put("https://tech4comp.de/xapi/context/extensions/courseInfo", courseInfoJSON);
 
 		JSONObject contextJSON = new JSONObject();
 		contextJSON.put("extensions", extensionJSON);
 		statement.put("context", contextJSON);
 	}
 
-	private String prepareForForwarding(JSONObject statement) {
-		return "";
-	}
 }

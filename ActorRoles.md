@@ -12,6 +12,6 @@ The intent is that once the system is expanded with other proxys (other than Moo
 | ------- | --------- | ------ |
 | 1 | student | Moodle |
 | 2 | manager | Moodle |
-| 3 | teacher | Moodle |
-| 4 | non-editing teacher | Moodle |
+| 3 | editingteacher | Moodle |
+| 4 | noneditingteacher | Moodle |
 
