@@ -53,11 +53,11 @@ import jdk.nashorn.internal.ir.ThrowNode;
 @SwaggerDefinition(
 		info = @Info(
 				title = "Moodle Data Proxy Service",
-				version = "1.0.0",
+				version = "1.2.0",
 				description = "A proxy for requesting data from moodle",
 				contact = @Contact(
-						name = "Alexander Tobias Neumann",
-						email = "neumann@rwth-aachen.de")))
+						name = "Boris Jovanovic",
+						email = "jovanovic.boris@rwth-aachen.de")))
 
 /**
  *
@@ -362,10 +362,10 @@ public class MoodleDataProxyService extends RESTService {
 				logger.warning("Checking consent for email: " + userEmail + " and action: " + verb + " ...");
 				boolean consentGiven = false;
 				try {
-					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.0", "checkUserConsent", userEmail, verb);
+					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1", "checkUserConsent", userEmail, verb);
 					if (consentGiven) {
 						// If consent for data extraction is given create log entry with included data
-						context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.0", "createLogEntry", message);
+						context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1", "createLogEntry", message);
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
