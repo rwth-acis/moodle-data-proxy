@@ -39,6 +39,7 @@ import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.security.UserAgentImpl;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleWebServiceConnection;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUser;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleStatementGenerator;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
@@ -52,11 +53,11 @@ import jdk.nashorn.internal.ir.ThrowNode;
 @SwaggerDefinition(
 		info = @Info(
 				title = "Moodle Data Proxy Service",
-				version = "1.0.0",
+				version = "1.2.0",
 				description = "A proxy for requesting data from moodle",
 				contact = @Contact(
-						name = "Alexander Tobias Neumann",
-						email = "neumann@rwth-aachen.de")))
+						name = "Boris Jovanovic",
+						email = "jovanovic.boris@rwth-aachen.de")))
 
 /**
  *
@@ -71,9 +72,11 @@ public class MoodleDataProxyService extends RESTService {
 	private String moodleDomain;
 	private String moodleToken;
 	private String courseList;
+	private boolean usesBlockchainVerification;
 
 	private static HashSet<Integer> courses = new HashSet<Integer>();
 	private static ScheduledExecutorService dataStreamThread = null;
+	private static ScheduledExecutorService userUpdateThread = null;
 
 	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataProxyService.class.getName());
 	private static MoodleWebServiceConnection moodle = null;
@@ -81,6 +84,7 @@ public class MoodleDataProxyService extends RESTService {
 	private static Context context = null;
 
 	private final static int MOODLE_DATA_STREAM_PERIOD = 60; // Every minute
+	private final static int MOODLE_USER_INFO_UPDATE_PERIOD = 3600; // Every hour
 	private static long lastChecked = 0;
 	private static String email = "";
 
@@ -111,7 +115,7 @@ public class MoodleDataProxyService extends RESTService {
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			Instant instant = timestamp.toInstant();
 			lastChecked = instant.getEpochSecond();
-			L2pLogger.setGlobalConsoleLevel(Level.WARNING);
+			L2pLogger.setGlobalConsoleLevel(Level.INFO);
 		}
 
 		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
@@ -127,8 +131,8 @@ public class MoodleDataProxyService extends RESTService {
 
 		if (email.equals("")) {
 			try {
-				int userId = webserviceInfoResponse.getInt("userid");
-				JSONObject user = moodle.core_user_get_users_by_field("id", userId);
+				int userID = webserviceInfoResponse.getInt("userid");
+				JSONObject user = moodle.core_user_get_users_by_field("id", userID);
 				email = user.getString("email");
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -238,8 +242,14 @@ public class MoodleDataProxyService extends RESTService {
 			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
 		}
 
+
 		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
 		String uEmail = u.getEmail();
+  
+		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
+		if (usesBlockchainVerification) {
+			logger.warning("Proxy service uses blockchain verification and consent checks");
+		}
 
 		if (!uEmail.equals(email)) {
 			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
@@ -249,6 +259,9 @@ public class MoodleDataProxyService extends RESTService {
 			dataStreamThread = Executors.newSingleThreadScheduledExecutor();
 			dataStreamThread.scheduleAtFixedRate(new DataStreamThread(), 0, MOODLE_DATA_STREAM_PERIOD,
 					TimeUnit.SECONDS);
+			userUpdateThread = Executors.newSingleThreadScheduledExecutor();
+			userUpdateThread.scheduleAtFixedRate(new UserUpdateThread(), 0, MOODLE_USER_INFO_UPDATE_PERIOD,
+					TimeUnit.SECONDS);
 			return Response.status(Status.OK).entity("Thread started.").build();
 		} else {
 			return Response.status(Status.BAD_REQUEST).entity("Thread already running.").build();
@@ -256,8 +269,8 @@ public class MoodleDataProxyService extends RESTService {
 	}
 
 	/**
-	 * Thread which periodically checks all courses for new quiz attempts,
-	 * creates xAPI statements of new attempts and sends them to Mobsos.
+	 * Thread which periodically checks all courses for events,
+	 * creates xAPI statements of new events and sends them to Mobsos.
 	 *
 	 * @return void
 	 *
@@ -271,11 +284,16 @@ public class MoodleDataProxyService extends RESTService {
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			long now = timestamp.toInstant().getEpochSecond();
 
-			for (int courseId : courses) {
+			for (int courseID : courses) {
 				try {
 					logger.info("Getting updates since " + lastChecked);
-					ArrayList<String> updates = statements.courseUpdatesSince(courseId, lastChecked);
+					ArrayList<String> updates = statements.courseUpdatesSince(courseID, lastChecked);
 					for (String update : updates) {
+						if (usesBlockchainVerification && !checkUserConsent(update)) {
+							// Skip this update if acting user did not consent to data extraction.
+							continue;
+						}
+
 						// handle timestamps from the future next time
 						if (checkXAPITimestamp(update) < now)
 							context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
@@ -283,7 +301,7 @@ public class MoodleDataProxyService extends RESTService {
 							logger.warning("Update not being sent due to it happening in the future: " + update);
 						}
 					}
-					logger.info("Sent " + updates.size() + " messages for course " + courseId);
+					logger.info("Sent " + updates.size() + " messages for course " + courseID);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -296,7 +314,7 @@ public class MoodleDataProxyService extends RESTService {
 			String statement = message.split("\\*")[0];
 			JSONObject statementJSON;
 			try {
-				 statementJSON = new JSONObject(statement);
+				statementJSON = new JSONObject(statement);
 			} catch (Exception e) {
 				logger.severe("Error pasing message to JSON: " + message);
 				return 0;
@@ -323,5 +341,97 @@ public class MoodleDataProxyService extends RESTService {
 			}
 			return 0;
 		}
+
+		private boolean checkUserConsent(String message) {
+			String statement = message.split("\\*")[0];
+			JSONObject statementJSON;
+			try {
+				statementJSON = new JSONObject(statement);
+			} catch (Exception e) {
+				logger.severe("Error parsing message to JSON: " + message);
+				return false;
+			}
+
+			if (statementJSON.isNull("actor")) {
+				logger.warning("Message does not seem to contain personal data.");
+				return true;
+			} else {
+				String userEmail = statementJSON.getJSONObject("actor").getJSONObject("account").getString("name");
+				String verb = statementJSON.getJSONObject("verb").getJSONObject("display").getString("en-US");
+
+				logger.warning("Checking consent for email: " + userEmail + " and action: " + verb + " ...");
+				boolean consentGiven = false;
+				try {
+					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1", "checkUserConsent", userEmail, verb);
+					if (consentGiven) {
+						// If consent for data extraction is given create log entry with included data
+						context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1", "createLogEntry", message);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					return false;
+				}
+				logger.warning("Consent given: " + consentGiven);
+				return consentGiven;
+			}
+		}
+	}
+
+	/**
+	 * Thread which periodically updates cached user info.
+	 *
+	 * @return void
+	 *
+	 */
+	private class UserUpdateThread implements Runnable {
+
+		@Override
+		public void run() {
+			Map<Integer, MoodleUser> tmpUserMap = new HashMap<>();
+
+			for (int courseID : courses) {
+				JSONArray usersJSON;
+				try {
+					usersJSON = moodle.core_enrol_get_enrolled_users(courseID);	
+				} catch (Exception e) {
+					logger.severe("Error while reaching core_enrol_get_enrolled_users while updating user info for course ID:"
+						+ courseID);
+					continue;
+				}
+				
+				for (Object user : usersJSON) {
+					JSONObject userJSON = (JSONObject) user;
+					int userID;
+					try {
+						userID = userJSON.getInt("id");
+					} catch (Exception e) {
+						logger.severe("Could not get user ID from core_enrol_get_enrolled_users while updating user. "
+						+ e.getStackTrace());
+						continue;
+					}
+					MoodleUser muser;
+					if (!tmpUserMap.containsKey(userID)) {
+						muser = new MoodleUser(userJSON);
+					}
+					else {
+						muser = tmpUserMap.get(userID);
+					}
+					// add roles
+					JSONArray rolesJSON = null;
+					try {
+						rolesJSON = userJSON.getJSONArray("roles");
+						muser.putCourseRoles(courseID, rolesJSON);
+					} catch (Exception e) {
+						logger.severe("Could not get user role from core_enrol_get_enrolled_users while updating user ID: "
+						+ userID + " " + e.getStackTrace());
+					}
+					
+					tmpUserMap.put(userID, muser);
+				}
+			}
+			
+			statements.setUserMap(tmpUserMap);
+		}
+
 	}
 }
