@@ -72,7 +72,7 @@ public class MoodleDataProxyService extends RESTService {
 	private String moodleDomain;
 	private String moodleToken;
 	private String courseList;
-	private boolean usesBlockchainVerification;
+	private boolean usesBlockchainVerification = false;
 
 	private static HashSet<Integer> courses = new HashSet<Integer>();
 	private static ScheduledExecutorService dataStreamThread = null;
@@ -238,22 +238,22 @@ public class MoodleDataProxyService extends RESTService {
 					message = "Moodle connection is initiaded") })
 	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		}
+		//if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+		//	return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		//}
 
 
-		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
-		String uEmail = u.getEmail();
+		//UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
+		//String uEmail = u.getEmail();
   
 		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
 		if (usesBlockchainVerification) {
 			logger.warning("Proxy service uses blockchain verification and consent checks");
 		}
 
-		if (!uEmail.equals(email)) {
-			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-		}
+		//if (!uEmail.equals(email)) {
+		//	return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		//}
 		if (dataStreamThread == null) {
 			context = Context.get();
 			dataStreamThread = Executors.newSingleThreadScheduledExecutor();
@@ -289,10 +289,10 @@ public class MoodleDataProxyService extends RESTService {
 					logger.info("Getting updates since " + lastChecked);
 					ArrayList<String> updates = statements.courseUpdatesSince(courseID, lastChecked);
 					for (String update : updates) {
-						if (usesBlockchainVerification && !checkUserConsent(update)) {
+						//if (usesBlockchainVerification && !checkUserConsent(update)) {
 							// Skip this update if acting user did not consent to data extraction.
-							continue;
-						}
+							//continue;
+						//}
 
 						// handle timestamps from the future next time
 						if (checkXAPITimestamp(update) < now)
