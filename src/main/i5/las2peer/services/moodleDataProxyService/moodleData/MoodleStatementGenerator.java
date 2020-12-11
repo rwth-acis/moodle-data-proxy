@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import i5.las2peer.services.moodleDataProxyService.MoodleDataProxyService;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleWebServiceConnection;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDataPOJO;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleExercise;
@@ -88,7 +89,12 @@ public class MoodleStatementGenerator {
 		ArrayList<String> statements = new ArrayList<>();
 		statements.addAll(getForumUpdates(courseid, forumids, since));
 		statements.addAll(getSubmissions(courseid, since));
-		statements.addAll(getEvents(courseid, since));
+		if (MoodleDataProxyService.isMoodleFunctionEnabled("local_t4c_get_recent_course_activities")) {
+			statements.addAll(getEvents(courseid, since));
+		}
+		else {
+			logger.warning("Cannot retrieve event data because tech4comp Moodle plugin not enabled.");
+		}
 
 		return statements;
 	}
