@@ -97,6 +97,7 @@ public class MoodleDataProxyService extends RESTService {
 		"core_course_get_updates_since",
 		"gradereport_user_get_grade_items",
 		"mod_quiz_get_user_attempts",
+		"mod_forum_get_forum_discussions",
 		"mod_forum_get_discussion_posts",
 		"local_t4c_get_recent_course_activities"
 	));
@@ -143,6 +144,8 @@ public class MoodleDataProxyService extends RESTService {
 
 		moodleFunctionSurvey(webserviceInfoResponse);
 
+		// Change variable to false in orded to check proxy functionality independent
+		// from the verification service.
 		usesBlockchainVerification = true;
 	}
 
