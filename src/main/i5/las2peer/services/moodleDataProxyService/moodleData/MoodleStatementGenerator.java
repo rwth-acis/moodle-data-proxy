@@ -137,6 +137,9 @@ public class MoodleStatementGenerator {
 							JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "replied", object,
 									moodle.getDomainName());
 							addStatementContextExtensions(builtStatement, creatorId, courseID);
+							// Add ID of parent post in context extension
+							int parentPostID = post.getInt("parentid");
+							addReplyContextExtensions(builtStatement, parentPostID);
 							forumUpdates.add(builtStatement.toString() + "*" + actor.getMoodleToken());
 						}
 					}
@@ -353,6 +356,22 @@ public class MoodleStatementGenerator {
 
 		JSONObject contextJSON = new JSONObject();
 		contextJSON.put("extensions", extensionJSON);
+		statement.put("context", contextJSON);
+	}
+
+	/**
+	 * Add context extensions about a post reply's direct parent.
+	 * @param statement The statement to be edited.
+	 * @param parentPostID ID of the direct parent.
+	 */
+	private static void addReplyContextExtensions(JSONObject statement, int parentPostID) {
+		JSONObject contextJSON = statement.getJSONObject("context");
+		JSONObject extensionsJSON = contextJSON.getJSONObject("extensions");
+		JSONObject parentIDJSON = new JSONObject();
+
+		parentIDJSON.put("parentid", parentPostID);
+		extensionsJSON.put("https://tech4comp.de/xapi/context/extensions/postParentID", parentIDJSON);
+		contextJSON.put("extensions", extensionsJSON);
 		statement.put("context", contextJSON);
 	}
 
