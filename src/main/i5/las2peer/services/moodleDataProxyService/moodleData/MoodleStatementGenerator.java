@@ -158,8 +158,15 @@ public class MoodleStatementGenerator {
 	 * @throws IOException if an I/O exception occurs.
 	 */
 	private static ArrayList<String> getSubmissions(int courseID, long since) throws IOException {
-		JSONArray gradeJSON = moodle.gradereport_user_get_grade_items(courseID);
+		JSONArray gradeJSON = null;
 		ArrayList<String> submissions = new ArrayList<String>();
+		try {
+			moodle.gradereport_user_get_grade_items(courseID);
+		} catch (JSONException e) {
+			logger.warning("Could not get 'usergrades' when using gradereport_user_get_grade_items.");
+			return submissions;
+		}
+
 		for (Object userObj : gradeJSON) {
 			JSONObject userReport = (JSONObject) userObj;
 			for (Object submissionObj : userReport.getJSONArray("gradeitems")) {
