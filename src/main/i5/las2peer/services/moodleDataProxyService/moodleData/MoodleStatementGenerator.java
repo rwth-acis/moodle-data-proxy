@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import i5.las2peer.services.moodleDataProxyService.MoodleDataProxyService;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleWebServiceConnection;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDataPOJO;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleExercise;
@@ -88,7 +89,12 @@ public class MoodleStatementGenerator {
 		ArrayList<String> statements = new ArrayList<>();
 		statements.addAll(getForumUpdates(courseid, forumids, since));
 		statements.addAll(getSubmissions(courseid, since));
-		statements.addAll(getEvents(courseid, since));
+		if (MoodleDataProxyService.isMoodleFunctionEnabled("local_t4c_get_recent_course_activities")) {
+			statements.addAll(getEvents(courseid, since));
+		}
+		else {
+			logger.warning("Cannot retrieve event data because tech4comp Moodle plugin not enabled.");
+		}
 
 		return statements;
 	}
@@ -116,6 +122,8 @@ public class MoodleStatementGenerator {
 					JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "posted", object,
 							moodle.getDomainName());
 					addStatementContextExtensions(builtStatement, creatorId, courseID);
+					int postID = discussion.getInt("id");
+					addPostContextExtensions(builtStatement, postID);
 					forumUpdates.add(builtStatement.toString() + "*" + actor.getMoodleToken());
 				}
 
@@ -131,6 +139,9 @@ public class MoodleStatementGenerator {
 							JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "replied", object,
 									moodle.getDomainName());
 							addStatementContextExtensions(builtStatement, creatorId, courseID);
+							// Add ID of parent post in context extension
+							int parentPostID = post.getInt("parentid");
+							addReplyContextExtensions(builtStatement, parentPostID);
 							forumUpdates.add(builtStatement.toString() + "*" + actor.getMoodleToken());
 						}
 					}
@@ -147,8 +158,15 @@ public class MoodleStatementGenerator {
 	 * @throws IOException if an I/O exception occurs.
 	 */
 	private static ArrayList<String> getSubmissions(int courseID, long since) throws IOException {
-		JSONArray gradeJSON = moodle.gradereport_user_get_grade_items(courseID);
+		JSONArray gradeJSON = null;
 		ArrayList<String> submissions = new ArrayList<String>();
+		try {
+			gradeJSON = moodle.gradereport_user_get_grade_items(courseID);
+		} catch (JSONException e) {
+			logger.warning("Could not get 'usergrades' when using gradereport_user_get_grade_items.");
+			return submissions;
+		}
+
 		for (Object userObj : gradeJSON) {
 			JSONObject userReport = (JSONObject) userObj;
 			for (Object submissionObj : userReport.getJSONArray("gradeitems")) {
@@ -347,6 +365,40 @@ public class MoodleStatementGenerator {
 
 		JSONObject contextJSON = new JSONObject();
 		contextJSON.put("extensions", extensionJSON);
+		statement.put("context", contextJSON);
+	}
+
+	/**
+	 * Add context extensions about a post reply's direct parent.
+	 * It must be called after the regular context extensions have been added.
+	 * @param statement The statement to be edited.
+	 * @param parentPostID ID of the direct parent.
+	 */
+	private static void addReplyContextExtensions(JSONObject statement, int parentPostID) {
+		JSONObject contextJSON = statement.getJSONObject("context");
+		JSONObject extensionsJSON = contextJSON.getJSONObject("extensions");
+		JSONObject parentIDJSON = new JSONObject();
+
+		parentIDJSON.put("parentid", parentPostID);
+		extensionsJSON.put("https://tech4comp.de/xapi/context/extensions/postParentID", parentIDJSON);
+		contextJSON.put("extensions", extensionsJSON);
+		statement.put("context", contextJSON);
+	}
+
+	/**
+	 * Add context extensions about the root post of a discussion.
+	 * It must be called after the regular context extensions have been added.
+	 * @param statement The statement to be edited.
+	 * @param postID ID of the root post.
+	 */
+	private static void addPostContextExtensions(JSONObject statement, int postID) {
+		JSONObject contextJSON = statement.getJSONObject("context");
+		JSONObject extensionsJSON = contextJSON.getJSONObject("extensions");
+		JSONObject postIDJSON = new JSONObject();
+
+		postIDJSON.put("rootpostid", postID);
+		extensionsJSON.put("https://tech4comp.de/xapi/context/extensions/rootPostID", postIDJSON);
+		contextJSON.put("extensions", extensionsJSON);
 		statement.put("context", contextJSON);
 	}
 

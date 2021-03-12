@@ -47,13 +47,12 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Contact;
 import io.swagger.annotations.Info;
 import io.swagger.annotations.SwaggerDefinition;
-import jdk.nashorn.internal.ir.ThrowNode;
 
 @Api
 @SwaggerDefinition(
 		info = @Info(
 				title = "Moodle Data Proxy Service",
-				version = "1.2.0",
+				version = "1.2.1",
 				description = "A proxy for requesting data from moodle",
 				contact = @Contact(
 						name = "Boris Jovanovic",
@@ -97,9 +96,11 @@ public class MoodleDataProxyService extends RESTService {
 		"core_course_get_updates_since",
 		"gradereport_user_get_grade_items",
 		"mod_quiz_get_user_attempts",
+		"mod_forum_get_forum_discussions",
 		"mod_forum_get_discussion_posts",
 		"local_t4c_get_recent_course_activities"
 	));
+	private static Set<String> enabledMoodleFunctions = new HashSet<>();
 
 	/**
 	 *
@@ -141,6 +142,10 @@ public class MoodleDataProxyService extends RESTService {
 		updateCourseList();
 
 		moodleFunctionSurvey(webserviceInfoResponse);
+
+		// Change variable to false in orded to check proxy functionality independent
+		// from the verification service.
+		usesBlockchainVerification = true;
 	}
 
 	private void updateCourseList() {
@@ -213,6 +218,10 @@ public class MoodleDataProxyService extends RESTService {
 					logger.info(webservice);
 				}
 			}
+
+			// Save enabled functions into the static set for reference
+			enabledMoodleFunctions = enabledFunctionSet;
+
 			if (enabledFunctionSet.containsAll(REQUIRED_MOODLE_FUNCTIONS)) {
 				logger.info("All required Moodle functions enabled.");
 			}
@@ -227,6 +236,19 @@ public class MoodleDataProxyService extends RESTService {
 
 		}
 
+	}
+
+	/**
+	 * Method that checks if a Moodle function is enabled.
+	 * Uses the enabledMoodleFunctions set which is populated
+	 * during the moodleFunctionSurvey.
+	 * 
+	 * @param functionName Full name of the moodle function,
+	 * e.g. core_course_get_course_module.
+	 * @return True if function is enabled, false otherwise.
+	 */
+	public static boolean isMoodleFunctionEnabled(String functionName) {
+		return enabledMoodleFunctions.contains(functionName);
 	}
 
 	@POST
@@ -289,9 +311,11 @@ public class MoodleDataProxyService extends RESTService {
 					logger.info("Getting updates since " + lastChecked);
 					ArrayList<String> updates = statements.courseUpdatesSince(courseID, lastChecked);
 					for (String update : updates) {
-						if (usesBlockchainVerification && !checkUserConsent(update)) {
-							// Skip this update if acting user did not consent to data extraction.
-							continue;
+						if (usesBlockchainVerification) {
+							if (!checkUserConsent(update)) {
+								// Skip this update if acting user did not consent to data extraction.
+								continue;
+							}
 						}
 
 						// handle timestamps from the future next time
