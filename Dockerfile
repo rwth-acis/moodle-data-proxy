@@ -1,4 +1,4 @@
-FROM openjdk:8-jdk-alpine
+FROM openjdk:14-jdk-alpine
 
 ENV LAS2PEER_PORT=9011
 

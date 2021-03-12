@@ -47,13 +47,12 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Contact;
 import io.swagger.annotations.Info;
 import io.swagger.annotations.SwaggerDefinition;
-import jdk.nashorn.internal.ir.ThrowNode;
 
 @Api
 @SwaggerDefinition(
 		info = @Info(
 				title = "Moodle Data Proxy Service",
-				version = "1.2.0",
+				version = "1.2.1",
 				description = "A proxy for requesting data from moodle",
 				contact = @Contact(
 						name = "Boris Jovanovic",
