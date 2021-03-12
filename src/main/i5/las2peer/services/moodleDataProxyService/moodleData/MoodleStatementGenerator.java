@@ -161,7 +161,7 @@ public class MoodleStatementGenerator {
 		JSONArray gradeJSON = null;
 		ArrayList<String> submissions = new ArrayList<String>();
 		try {
-			moodle.gradereport_user_get_grade_items(courseID);
+			gradeJSON = moodle.gradereport_user_get_grade_items(courseID);
 		} catch (JSONException e) {
 			logger.warning("Could not get 'usergrades' when using gradereport_user_get_grade_items.");
 			return submissions;
