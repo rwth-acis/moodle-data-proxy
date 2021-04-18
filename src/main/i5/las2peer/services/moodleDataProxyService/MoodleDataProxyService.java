@@ -91,8 +91,8 @@ public class MoodleDataProxyService extends RESTService {
 	private static long lastChecked = 0;
 	private static String email = "";
 	
-	private boolean userWhitelistEnabled = false;
-	private List<String> userWhitelist = new ArrayList<>();
+	private static boolean userWhitelistEnabled = false;
+	private static List<String> userWhitelist = new ArrayList<>();
 
 	private final static Set<String> REQUIRED_MOODLE_FUNCTIONS = new HashSet<String>(Arrays.asList(
 		"core_course_get_courses",
@@ -397,11 +397,9 @@ public class MoodleDataProxyService extends RESTService {
 					logger.info("Getting updates since " + lastChecked);
 					ArrayList<String> updates = statements.courseUpdatesSince(courseID, lastChecked);
 					for (String update : updates) {
-						if (usesBlockchainVerification) {
-							if (!checkUserConsent(update)) {
-								// Skip this update if acting user did not consent to data extraction.
-								continue;
-							}
+						if (!checkUserConsent(update)) {
+							// Skip this update if acting user did not consent to data extraction.
+							continue;
 						}
 
 						// handle timestamps from the future next time
@@ -461,14 +459,17 @@ public class MoodleDataProxyService extends RESTService {
 				logger.severe("Error parsing message to JSON: " + message);
 				return false;
 			}
-
+			
 			if (statementJSON.isNull("actor")) {
 				logger.warning("Message does not seem to contain personal data.");
 				return true;
-			} else {
-				String userEmail = statementJSON.getJSONObject("actor").getJSONObject("account").getString("name");
+			}
+			
+			String userEmail = statementJSON.getJSONObject("actor").getJSONObject("account").getString("name");
+			
+			if(usesBlockchainVerification) {
 				String verb = statementJSON.getJSONObject("verb").getJSONObject("display").getString("en-US");
-
+				
 				logger.warning("Checking consent for email: " + userEmail + " and action: " + verb + " ...");
 				boolean consentGiven = false;
 				try {
@@ -484,6 +485,11 @@ public class MoodleDataProxyService extends RESTService {
 				logger.warning("Consent given: " + consentGiven);
 				return consentGiven;
 			}
+			
+			if(userWhitelistEnabled) {
+				return userWhitelist.contains(userEmail);
+			}
+			return true;
 		}
 	}
 
@@ -522,9 +528,24 @@ public class MoodleDataProxyService extends RESTService {
 					MoodleUser muser;
 					if (!tmpUserMap.containsKey(userID)) {
 						muser = new MoodleUser(userJSON);
+						if(MoodleDataProxyService.userWhitelistEnabled) {
+							// check if user is on whitelist
+							if(!MoodleDataProxyService.userWhitelist.contains(muser.getEmail())) {
+								// user is not on whitelist
+								continue;
+							}
+						}
 					}
 					else {
 						muser = tmpUserMap.get(userID);
+						if(MoodleDataProxyService.userWhitelistEnabled) {
+							// check if user is on whitelist (might be the case if whitelist got enabled after user was fetched)
+							if(!MoodleDataProxyService.userWhitelist.contains(muser.getEmail())) {
+								// user is not on whitelist => remove from user map
+								tmpUserMap.remove(userID);
+								continue;
+							}
+						}
 					}
 					// add roles
 					JSONArray rolesJSON = null;
