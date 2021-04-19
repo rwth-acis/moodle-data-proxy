@@ -91,8 +91,8 @@ public class MoodleDataProxyService extends RESTService {
 	private static long lastChecked = 0;
 	private static String email = "";
 	
-	private static boolean userWhitelistEnabled = false;
-	private static List<String> userWhitelist = new ArrayList<>();
+	private boolean userWhitelistEnabled = false;
+	private List<String> userWhitelist = new ArrayList<>();
 
 	private final static Set<String> REQUIRED_MOODLE_FUNCTIONS = new HashSet<String>(Arrays.asList(
 		"core_course_get_courses",
@@ -528,24 +528,9 @@ public class MoodleDataProxyService extends RESTService {
 					MoodleUser muser;
 					if (!tmpUserMap.containsKey(userID)) {
 						muser = new MoodleUser(userJSON);
-						if(MoodleDataProxyService.userWhitelistEnabled) {
-							// check if user is on whitelist
-							if(!MoodleDataProxyService.userWhitelist.contains(muser.getEmail())) {
-								// user is not on whitelist
-								continue;
-							}
-						}
 					}
 					else {
 						muser = tmpUserMap.get(userID);
-						if(MoodleDataProxyService.userWhitelistEnabled) {
-							// check if user is on whitelist (might be the case if whitelist got enabled after user was fetched)
-							if(!MoodleDataProxyService.userWhitelist.contains(muser.getEmail())) {
-								// user is not on whitelist => remove from user map
-								tmpUserMap.remove(userID);
-								continue;
-							}
-						}
 					}
 					// add roles
 					JSONArray rolesJSON = null;

@@ -72,7 +72,7 @@ public class UserWhitelistHelper {
 			// either there is only one item on the whitelist or
 			// the other items can be found in the following lines of the file
 			whitelist = new ArrayList<>();
-			whitelist.add(line);
+			if(!line.isEmpty()) whitelist.add(line);
 			while ((line = br.readLine()) != null) {
 				if (!line.isEmpty())
 					whitelist.add(line);
