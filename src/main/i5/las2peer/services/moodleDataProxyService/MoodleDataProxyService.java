@@ -91,8 +91,8 @@ public class MoodleDataProxyService extends RESTService {
 	private static long lastChecked = 0;
 	private static String email = "";
 	
-	private boolean userWhitelistEnabled = false;
-	private List<String> userWhitelist = new ArrayList<>();
+	private static boolean userWhitelistEnabled = false;
+	private static List<String> userWhitelist = new ArrayList<>();
 
 	private final static Set<String> REQUIRED_MOODLE_FUNCTIONS = new HashSet<String>(Arrays.asList(
 		"core_course_get_courses",
