@@ -56,7 +56,7 @@ import io.swagger.annotations.SwaggerDefinition;
 @SwaggerDefinition(
 		info = @Info(
 				title = "Moodle Data Proxy Service",
-				version = "1.2.1",
+				version = "1.3.0",
 				description = "A proxy for requesting data from moodle",
 				contact = @Contact(
 						name = "Boris Jovanovic",
