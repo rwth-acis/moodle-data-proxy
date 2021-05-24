@@ -173,10 +173,23 @@ public class MoodleStatementGenerator {
 				JSONObject submission = (JSONObject) submissionObj;
 
 				// add new submission
-				if (submission.isNull("gradedatesubmitted") || (submission.getLong("gradedatesubmitted") < since
-						&& submission.getLong("gradedategraded") < since)) {
+				if (submission.isNull("gradedatesubmitted") && submission.isNull("gradedategraded")) {
+					// neither submitted nor graded yet
+					continue;
+				} else if (submission.isNull("gradedatesubmitted") && submission.getLong("gradedategraded") < since) {
+					// submitted but already graded (then gradedatesubmitted gets set to null again)
+					// but was graded before current interval
+					continue;
+				} else if (submission.isNull("gradedategraded") && submission.getLong("gradedatesubmitted") < since) {
+					// submitted and not yet graded, but was submitted before current interval
 					continue;
 				}
+				
+				if (!submission.isNull("itemtype") && submission.getString("itemtype").equals("course")) {
+					// this is the grading for the course in total
+					continue;
+				}
+				
 				logger.info("Got submission:\n" + submission.toString());
 				int userID = userReport.getInt("userid");
 				MoodleUser actor = getUser(userID, courseID);
@@ -184,6 +197,7 @@ public class MoodleStatementGenerator {
 
 				// add new grade
 				if (!submission.isNull("gradedategraded") && submission.getLong("gradedategraded") > since) {
+					// got graded in the current interval
 					MoodleGrade grade = new MoodleGrade(submission);
 					if (!submission.isNull("modname") && submission.getString("modname") == "quiz") {
 						JSONArray attempts = moodle.mod_quiz_get_user_attempts(submission.getInt("iteminstance"),
@@ -196,7 +210,7 @@ public class MoodleStatementGenerator {
 							moodle.getDomainName());
 					addStatementContextExtensions(builtStatement, userID, courseID);
 					submissions.add(builtStatement.toString() + "*" + actor.getMoodleToken());
-				} else {
+				} else if (!submission.isNull("gradedatesubmitted") && submission.getLong("gradedatesubmitted") > since) {
 					JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "submitted", exercise,
 							submission.getLong("gradedatesubmitted"), moodle.getDomainName());
 					addStatementContextExtensions(builtStatement, userID, courseID);
