@@ -124,7 +124,7 @@ public class MoodleStatementGenerator {
 					addStatementContextExtensions(builtStatement, creatorId, courseID);
 					int postID = discussion.getInt("id");
 					addPostContextExtensions(builtStatement, postID);
-					forumUpdates.add(builtStatement.toString() + "*" + actor.getMoodleToken());
+					forumUpdates.add(attachToken(builtStatement, actor.getMoodleToken()));
 				}
 
 				// add new posts
@@ -142,7 +142,7 @@ public class MoodleStatementGenerator {
 							// Add ID of parent post in context extension
 							int parentPostID = post.getInt("parentid");
 							addReplyContextExtensions(builtStatement, parentPostID);
-							forumUpdates.add(builtStatement.toString() + "*" + actor.getMoodleToken());
+							forumUpdates.add(attachToken(builtStatement, actor.getMoodleToken()));
 						}
 					}
 				}
@@ -152,7 +152,6 @@ public class MoodleStatementGenerator {
 	}
 
 	/**
-	 * @param gradeJSON JSON Array containing grading data for every user
 	 * @param since     time of oldes changes to get included
 	 * @return Returns an ArrayList of new submissions and grades
 	 * @throws IOException if an I/O exception occurs.
@@ -209,12 +208,12 @@ public class MoodleStatementGenerator {
 					JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "completed", exercise, grade,
 							moodle.getDomainName());
 					addStatementContextExtensions(builtStatement, userID, courseID);
-					submissions.add(builtStatement.toString() + "*" + actor.getMoodleToken());
+					submissions.add(attachToken(builtStatement, actor.getMoodleToken()));
 				} else if (!submission.isNull("gradedatesubmitted") && submission.getLong("gradedatesubmitted") > since) {
 					JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "submitted", exercise,
 							submission.getLong("gradedatesubmitted"), moodle.getDomainName());
 					addStatementContextExtensions(builtStatement, userID, courseID);
-					submissions.add(builtStatement.toString() + "*" + actor.getMoodleToken());
+					submissions.add(attachToken(builtStatement, actor.getMoodleToken()));
 				}
 			}
 		}
@@ -222,7 +221,6 @@ public class MoodleStatementGenerator {
 	}
 
 	/**
-	 * @param events JSON Array of recent events
 	 * @param since  time of oldes event to get included
 	 * @return Returns an ArrayList of new events
 	 * @throws IOException if an I/O exception occurs.
@@ -246,7 +244,7 @@ public class MoodleStatementGenerator {
 			JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "viewed", object,
 					event.getLong("timecreated"), overwriteName, moodle.getDomainName());
 			addStatementContextExtensions(builtStatement, userID, courseID);
-			viewEvents.add(builtStatement.toString() + "*" + actor.getMoodleToken());
+			viewEvents.add(attachToken(builtStatement, actor.getMoodleToken()));
 		}
 		return viewEvents;
 	}
@@ -255,7 +253,7 @@ public class MoodleStatementGenerator {
 	 * Function that retrieves the user from the cached userMap if available, else
 	 * creates it with data from Moodle.
 	 * 
-	 * @param userid id of the user whose information should be returned
+	 * @param userID id of the user whose information should be returned
 	 * @return Returns a MoodleUser object associated with given userid
 	 * @throws IOException if an I/O exception occurs.
 	 */
@@ -414,6 +412,13 @@ public class MoodleStatementGenerator {
 		extensionsJSON.put("https://tech4comp.de/xapi/context/extensions/rootPostID", postIDJSON);
 		contextJSON.put("extensions", extensionsJSON);
 		statement.put("context", contextJSON);
+	}
+
+	private static String attachToken(JSONObject statement, String token) {
+		JSONObject result = new JSONObject();
+		result.put("statement", statement);
+		result.put("token", token);
+		return result.toString();
 	}
 
 }
