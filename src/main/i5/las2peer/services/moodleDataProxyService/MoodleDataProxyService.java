@@ -282,18 +282,18 @@ public class MoodleDataProxyService extends RESTService {
 					message = "Moodle connection is initiaded") })
 	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-//		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-//			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-//		}
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
   
 		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
 		if (usesBlockchainVerification) {
 			logger.warning("Proxy service uses blockchain verification and consent checks");
 		}
 
-//		if (!isMainAgentMoodleTokenOwner()) {
-//			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-//		}
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		}
 
 
 		if (dataStreamThread == null) {
@@ -312,7 +312,7 @@ public class MoodleDataProxyService extends RESTService {
 	
 	/**
 	 * Method to set a user whitelist for the proxy.
-	 * Takes a CSV file containing email addresses of users that should be on the whitelist.
+	 * Takes a CSV file containing the email addresses of users that should be on the whitelist.
 	 * Only data of these users is sent to MobSOS.
 	 * @param whitelistInputStream CSV file
 	 * @return
