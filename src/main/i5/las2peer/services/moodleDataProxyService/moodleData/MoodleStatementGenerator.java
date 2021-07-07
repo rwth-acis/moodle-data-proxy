@@ -1,39 +1,25 @@
 package i5.las2peer.services.moodleDataProxyService.moodleData;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 
+import i5.las2peer.services.moodleDataProxyService.util.StoreManagementHelper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import i5.las2peer.services.moodleDataProxyService.MoodleDataProxyService;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleWebServiceConnection;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDataPOJO;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleExercise;
-import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleCourse;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDiscussion;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodlePost;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUser;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleGrade;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleModule;
-import i5.las2peer.services.moodleDataProxyService.moodleData.xAPIStatements;
 import i5.las2peer.logging.L2pLogger;
-import java.util.logging.Level;
 
 public class MoodleStatementGenerator {
 	
@@ -99,6 +85,24 @@ public class MoodleStatementGenerator {
 		return statements;
 	}
 
+
+	/**
+	 * Helper function for determining the right client tokens according to the store assignment.
+	 *
+	 * @param courseID Course to which the statement belongs
+	 * @param actor Actor in the statement
+	 * @return
+	 */
+	private static JSONArray getStoreTokens(int courseID, MoodleUser actor) {
+		ArrayList<String> tokens = new ArrayList<>();
+		if (StoreManagementHelper.isStoreAssignmentEnabled() && StoreManagementHelper.getAssignment(Integer.toString(courseID)) != null) {
+			tokens.addAll(StoreManagementHelper.getAssignment(Integer.toString(courseID)));
+		} else {
+			tokens.add(actor.getMoodleToken());
+		}
+		return new JSONArray(tokens);
+	}
+
 	/**
 	 * @param forumids Array of module ids which belong to recently updated forums
 	 * @param since    time of oldes changes to get included
@@ -124,7 +128,7 @@ public class MoodleStatementGenerator {
 					addStatementContextExtensions(builtStatement, creatorId, courseID);
 					int postID = discussion.getInt("id");
 					addPostContextExtensions(builtStatement, postID);
-					forumUpdates.add(attachToken(builtStatement, actor.getMoodleToken()));
+					forumUpdates.add(attachTokens(builtStatement, getStoreTokens(courseID,actor)));
 				}
 
 				// add new posts
@@ -142,7 +146,7 @@ public class MoodleStatementGenerator {
 							// Add ID of parent post in context extension
 							int parentPostID = post.getInt("parentid");
 							addReplyContextExtensions(builtStatement, parentPostID);
-							forumUpdates.add(attachToken(builtStatement, actor.getMoodleToken()));
+							forumUpdates.add(attachTokens(builtStatement, getStoreTokens(courseID,actor)));
 						}
 					}
 				}
@@ -208,12 +212,12 @@ public class MoodleStatementGenerator {
 					JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "completed", exercise, grade,
 							moodle.getDomainName());
 					addStatementContextExtensions(builtStatement, userID, courseID);
-					submissions.add(attachToken(builtStatement, actor.getMoodleToken()));
+					submissions.add(attachTokens(builtStatement, getStoreTokens(courseID,actor)));
 				} else if (!submission.isNull("gradedatesubmitted") && submission.getLong("gradedatesubmitted") > since) {
 					JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "submitted", exercise,
 							submission.getLong("gradedatesubmitted"), moodle.getDomainName());
 					addStatementContextExtensions(builtStatement, userID, courseID);
-					submissions.add(attachToken(builtStatement, actor.getMoodleToken()));
+					submissions.add(attachTokens(builtStatement, getStoreTokens(courseID,actor)));
 				}
 			}
 		}
@@ -244,7 +248,7 @@ public class MoodleStatementGenerator {
 			JSONObject builtStatement = xAPIStatements.createXAPIStatement(actor, "viewed", object,
 					event.getLong("timecreated"), overwriteName, moodle.getDomainName());
 			addStatementContextExtensions(builtStatement, userID, courseID);
-			viewEvents.add(attachToken(builtStatement, actor.getMoodleToken()));
+			viewEvents.add(attachTokens(builtStatement, getStoreTokens(courseID,actor)));
 		}
 		return viewEvents;
 	}
@@ -414,11 +418,10 @@ public class MoodleStatementGenerator {
 		statement.put("context", contextJSON);
 	}
 
-	private static String attachToken(JSONObject statement, String token) {
+	private static String attachTokens(JSONObject statement, JSONArray tokens) {
 		JSONObject result = new JSONObject();
 		result.put("statement", statement);
-		result.put("token", token);
+		result.put("tokens", tokens);
 		return result.toString();
 	}
-
 }

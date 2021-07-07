@@ -27,6 +27,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import i5.las2peer.services.moodleDataProxyService.util.StoreManagementHelper;
+import i5.las2peer.services.moodleDataProxyService.util.StoreManagementParseException;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -94,6 +96,7 @@ public class MoodleDataProxyService extends RESTService {
 	private static boolean userWhitelistEnabled = false;
 	private static List<String> userWhitelist = new ArrayList<>();
 
+
 	private final static Set<String> REQUIRED_MOODLE_FUNCTIONS = new HashSet<String>(Arrays.asList(
 		"core_course_get_courses",
 		"core_enrol_get_enrolled_users",
@@ -155,18 +158,49 @@ public class MoodleDataProxyService extends RESTService {
 		usesBlockchainVerification = true;
 		
 		// check if whitelist file exists and enable whitelist in that case
-		this.userWhitelistEnabled = UserWhitelistHelper.isWhitelistEnabled();
-		if(this.userWhitelistEnabled) {
+		userWhitelistEnabled = UserWhitelistHelper.isWhitelistEnabled();
+		if(userWhitelistEnabled) {
 			logger.info("Found user whitelist file, enabling whitelist...");
 			try {
-				this.userWhitelist = UserWhitelistHelper.loadWhitelist();
-				logger.info("User whitelist is enabled and contains " + this.userWhitelist.size() + " items.");
+				userWhitelist = UserWhitelistHelper.loadWhitelist();
+				logger.info("User whitelist is enabled and contains " + userWhitelist.size() + " items.");
 			} catch (IOException | WhitelistParseException e) {
 				logger.severe("An error occurred while loading the whitelist from file.");
 				e.printStackTrace();
 			}
 		} else {
 			logger.info("User whitelist is not enabled.");
+		}
+
+		// check if stores list file exists
+		if(StoreManagementHelper.isStoreAssignmentEnabled()) {
+			logger.info("Found stores list file...");
+			try {
+				StoreManagementHelper.loadStores();
+				logger.info("Stores list loaded.");
+			} catch (IOException e) {
+				logger.severe("An error occurred while loading the stores list from file.");
+				e.printStackTrace();
+			}
+		} else {
+			logger.info("Stores list os not available.");
+		}
+
+		// check if store assignment file exists and enable the assignment in that case
+		if (StoreManagementHelper.isStoreAssignmentEnabled()) {
+			StoreManagementHelper.enableStoreAssignment();
+		};
+		if(StoreManagementHelper.isStoreAssignmentEnabled()) {
+			logger.info("Found store assignment file, enabling assignment...");
+			try {
+				StoreManagementHelper.loadAssignments();
+				logger.info("Store assignment is enabled.");
+			} catch (IOException e) {
+				logger.severe("An error occurred while loading the assignment from file.");
+				e.printStackTrace();
+			}
+		} else {
+			logger.info("Store assignment is not enabled.");
 		}
 	}
 
@@ -335,11 +369,11 @@ public class MoodleDataProxyService extends RESTService {
 		}
 		
 		try {			
-			this.userWhitelist = UserWhitelistHelper.updateWhitelist(whitelistInputStream);
-			this.userWhitelistEnabled = true;
-			logger.info("Enabled whitelist containing " + this.userWhitelist.size() + " items.");
+			userWhitelist = UserWhitelistHelper.updateWhitelist(whitelistInputStream);
+			userWhitelistEnabled = true;
+			logger.info("Enabled whitelist containing " + userWhitelist.size() + " items.");
 			return Response.status(200).entity("Enabled whitelist containing " + 
-			    this.userWhitelist.size() + " items.").build();
+			    userWhitelist.size() + " items.").build();
 		} catch (IOException | WhitelistParseException e) {
 			return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(e.getMessage()).build();
 		}
@@ -375,7 +409,104 @@ public class MoodleDataProxyService extends RESTService {
 			return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity("Unable to disable whitelist.").build();
 		}
 	}
-	
+
+	/**
+	 * Method for setting the available stores of the proxy.
+	 * Takes a properties file containing the store names and their respective client tokens as key-value pairs.
+	 * The given stores can be assigned to specific course IDs (see {@link #setStoreAssignment(InputStream)}).
+	 * @param storesInputStream CSV file
+	 * @return
+	 */
+	@POST
+	@Path("/setCourseList")
+	@Produces(MediaType.TEXT_PLAIN)
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	@ApiResponses(
+			value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Updated store list."),
+					@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
+					@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied.") })
+	public Response setStoreList(@FormDataParam("storeList") InputStream storesInputStream) {
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
+
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+		}
+
+		try {
+			StoreManagementHelper.updateStores(storesInputStream);
+			logger.info("Added store list.");
+			return Response.status(200).entity("Added store list containing " +
+					userWhitelist.size() + " stores.").build();
+		} catch (IOException e) {
+			return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(e.getMessage()).build();
+		}
+	}
+
+	/**
+	 * Method for setting the assignments of Moodle courses to stores.
+	 * Takes a properties file containing the course IDs and a comma-separated list of store names as key-value pairs.
+	 * The assigned stores must be in the list of available stores (see {@link #setStoreList(InputStream)}).
+	 * @param storesInputStream CSV file
+	 * @return
+	 */
+	@POST
+	@Path("/setStoreAssignment")
+	@Produces(MediaType.TEXT_PLAIN)
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	@ApiResponses(
+			value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Updated store assignment."),
+					@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
+					@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied.") })
+	public Response setStoreAssignment(@FormDataParam("storeList") InputStream storesInputStream) {
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
+
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+		}
+
+		try {
+			StoreManagementHelper.updateAssignments(storesInputStream);
+			logger.info("Added store assignment.");
+			return Response.status(200).entity("Added store assignment.").build();
+		} catch (IOException | StoreManagementParseException e) {
+			return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(e.getMessage()).build();
+		}
+	}
+
+	/**
+	 * Method to disable the store assignment.
+	 * @return
+	 */
+	@POST
+	@Path("/disableStoreAssignment")
+	@Produces(MediaType.TEXT_PLAIN)
+	@ApiResponses(
+			value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Disabled store assignment."),
+					@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
+					@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied."),
+					@ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "Unable to disable store assignment.")})
+	public Response disableStoreAssignment() {
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
+
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+		}
+
+		boolean success = StoreManagementHelper.removeAssignmentFile();
+		if(success) {
+			StoreManagementHelper.resetAssignment();
+			StoreManagementHelper.disableStoreAssignment();
+			return Response.status(Status.OK).entity("Disabled store assignment.").build();
+		} else {
+			return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity("Unable to disable store assignment.").build();
+		}
+	}
 
 	/**
 	 * Thread which periodically checks all courses for events,
