@@ -282,18 +282,18 @@ public class MoodleDataProxyService extends RESTService {
 					message = "Moodle connection is initiaded") })
 	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-//		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-//			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-//		}
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
   
 		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
 		if (usesBlockchainVerification) {
 			logger.warning("Proxy service uses blockchain verification and consent checks");
 		}
 
-//		if (!isMainAgentMoodleTokenOwner()) {
-//			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-//		}
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		}
 
 
 		if (dataStreamThread == null) {
