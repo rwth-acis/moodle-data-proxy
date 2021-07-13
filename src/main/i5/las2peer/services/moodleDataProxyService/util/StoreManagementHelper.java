@@ -67,24 +67,35 @@ public class StoreManagementHelper {
     public static void updateAssignments(InputStream assignmentsInputStream)
             throws IOException, StoreManagementParseException {
         createTmpDir();
+        File temp_file = new File(TMP_DIR, "temp_" + ASSIGNMENT_FILENAME);
+        FileUtils.copyInputStreamToFile(assignmentsInputStream, temp_file);
 
+        FileInputStream tempStream = new FileInputStream(new File(TMP_DIR, "temp_" + ASSIGNMENT_FILENAME));
         Properties assignmentsProp = new Properties();
-        assignmentsProp.load(assignmentsInputStream);
+        assignmentsProp.load(tempStream);
 
         // Check if all stores are contained in the stores list
         for (Entry<Object,Object> entry : assignmentsProp.entrySet()) {
             String courseId = entry.getKey().toString();
             String value = entry.getValue().toString();
+            System.out.println(storeMap);
+            System.out.println(value);
             ArrayList<String> assignedStores = new ArrayList<>(Arrays.asList(value.split(",")));
+            System.out.println(assignedStores);
             for (String store : assignedStores) {
+                System.out.println(storeMap.get(store));
                 if (storeMap.get(store) == null) {
+                    temp_file.delete();
                     throw new StoreManagementParseException(courseId, store);
                 }
             }
         }
 
-        FileUtils.copyInputStreamToFile(assignmentsInputStream, new File(TMP_DIR, ASSIGNMENT_FILENAME));
-
+        File assignmentFile = new File(TMP_DIR, ASSIGNMENT_FILENAME);
+        if (assignmentFile.exists()) {
+            assignmentFile.delete();
+        }
+        temp_file.renameTo(assignmentFile);
         assignmentMap = loadAssignments();
     }
 
@@ -142,8 +153,6 @@ public class StoreManagementHelper {
         File tmpDir = new File(TMP_DIR);
         if (!tmpDir.exists()) {
             FileUtils.forceMkdir(tmpDir.getAbsoluteFile());
-        } else {
-            FileUtils.cleanDirectory(tmpDir.getAbsoluteFile());
         }
     }
 
@@ -153,6 +162,14 @@ public class StoreManagementHelper {
      */
     public static boolean isStoreAssignmentEnabled() {
         return (new File(TMP_DIR, ASSIGNMENT_FILENAME)).exists();
+    }
+
+    /**
+     * Checks if the file for the store assignment exists.
+     * @return Whether the file for the store assignment exists.
+     */
+    public static boolean isStoreListEnabled() {
+        return (new File(TMP_DIR, STORES_FILENAME)).exists();
     }
 
     /**
@@ -171,6 +188,10 @@ public class StoreManagementHelper {
         return assignmentMap.get(courseId);
     }
 
+    public static String getClientId(String storeId) {
+        return storeMap.get(storeId);
+    }
+
     public static void resetAssignment() {
         assignmentMap = new HashMap<>();
     }
@@ -178,5 +199,13 @@ public class StoreManagementHelper {
     public static void enableStoreAssignment() {storeAssignmentEnabled = true;}
 
     public static void disableStoreAssignment() {storeAssignmentEnabled = false;}
+
+    public static int numberOfStores() {
+        return storeMap.size();
+    }
+
+    public static int numberOfAssignments() {
+        return assignmentMap.size();
+    }
 
 }

@@ -96,7 +96,9 @@ public class MoodleStatementGenerator {
 	private static JSONArray getStoreTokens(int courseID, MoodleUser actor) {
 		ArrayList<String> tokens = new ArrayList<>();
 		if (StoreManagementHelper.isStoreAssignmentEnabled() && StoreManagementHelper.getAssignment(Integer.toString(courseID)) != null) {
-			tokens.addAll(StoreManagementHelper.getAssignment(Integer.toString(courseID)));
+			for (String storeId : StoreManagementHelper.getAssignment(Integer.toString(courseID))) {
+				tokens.add(StoreManagementHelper.getClientId(storeId));
+			}
 		} else {
 			tokens.add(actor.getMoodleToken());
 		}
