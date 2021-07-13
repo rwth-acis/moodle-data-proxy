@@ -316,18 +316,18 @@ public class MoodleDataProxyService extends RESTService {
 					message = "Moodle connection is initiated") })
 	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
-//		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-//			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-//		}
-//
-//		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
-//		if (usesBlockchainVerification) {
-//			logger.warning("Proxy service uses blockchain verification and consent checks");
-//		}
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
 
-//		if (!isMainAgentMoodleTokenOwner()) {
-//			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-//		}
+		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
+		if (usesBlockchainVerification) {
+			logger.warning("Proxy service uses blockchain verification and consent checks");
+		}
+
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		}
 
 
 		if (dataStreamThread == null) {
@@ -360,13 +360,13 @@ public class MoodleDataProxyService extends RESTService {
 					  @ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
 					  @ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied.") })
 	public Response setUserWhitelist(@FormDataParam("whitelist") InputStream whitelistInputStream) {
-//		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-//			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-//		}
-//
-//		if (!isMainAgentMoodleTokenOwner()) {
-//			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
-//		}
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
+
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+		}
 		
 		try {			
 			userWhitelist = UserWhitelistHelper.updateWhitelist(whitelistInputStream);
@@ -392,13 +392,13 @@ public class MoodleDataProxyService extends RESTService {
 					  @ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied."),
 					  @ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "Unable to disable whitelist.")})
 	public Response disableUserWhitelist() {
-//		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-//			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-//		}
-//
-//		if (!isMainAgentMoodleTokenOwner()) {
-//			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
-//		}
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
+
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+		}
 		
 		boolean success = UserWhitelistHelper.removeWhitelistFile();
 		if(success) {
@@ -426,13 +426,13 @@ public class MoodleDataProxyService extends RESTService {
 					@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
 					@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied.") })
 	public Response setStoreList(@FormDataParam("storeList") InputStream storesInputStream) {
-//		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-//			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-//		}
-//
-//		if (!isMainAgentMoodleTokenOwner()) {
-//			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
-//		}
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
+
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+		}
 
 		try {
 			StoreManagementHelper.updateStores(storesInputStream);
@@ -460,13 +460,13 @@ public class MoodleDataProxyService extends RESTService {
 					@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
 					@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied.") })
 	public Response setStoreAssignment(@FormDataParam("storeAssignment") InputStream storesInputStream) {
-//		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-//			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-//		}
-//
-//		if (!isMainAgentMoodleTokenOwner()) {
-//			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
-//		}
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
+
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+		}
 
 		try {
 			StoreManagementHelper.updateAssignments(storesInputStream);
@@ -492,13 +492,13 @@ public class MoodleDataProxyService extends RESTService {
 					@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied."),
 					@ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "Unable to disable store assignment.")})
 	public Response disableStoreAssignment() {
-//		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-//			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-//		}
-//
-//		if (!isMainAgentMoodleTokenOwner()) {
-//			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
-//		}
+		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+		}
+
+		if (!isMainAgentMoodleTokenOwner()) {
+			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+		}
 
 		boolean success = StoreManagementHelper.removeAssignmentFile();
 		if(success) {
@@ -585,10 +585,10 @@ public class MoodleDataProxyService extends RESTService {
 		}
 
 		private boolean checkUserConsent(String message) {
-			String statement = message.split("\\*")[0];
-			JSONObject statementJSON;
+			JSONObject statementJSON = null;
 			try {
-				statementJSON = new JSONObject(statement);
+				JSONObject msgObj = new JSONObject(message);
+				statementJSON = (JSONObject) msgObj.get("statement");
 			} catch (Exception e) {
 				logger.severe("Error parsing message to JSON: " + message);
 				return false;
