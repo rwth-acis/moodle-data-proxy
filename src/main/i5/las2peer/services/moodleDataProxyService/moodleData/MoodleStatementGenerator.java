@@ -95,9 +95,10 @@ public class MoodleStatementGenerator {
 	 */
 	private static JSONArray getStoreTokens(int courseID, MoodleUser actor) {
 		ArrayList<String> tokens = new ArrayList<>();
-		if (StoreManagementHelper.isStoreAssignmentEnabled() && StoreManagementHelper.getAssignment(Integer.toString(courseID)) != null) {
+		if (StoreManagementHelper.isStoreAssignmentEnabled() &&
+				StoreManagementHelper.getAssignment(Integer.toString(courseID)) != null) {
 			for (String storeId : StoreManagementHelper.getAssignment(Integer.toString(courseID))) {
-				tokens.add(StoreManagementHelper.getClientId(storeId));
+				tokens.add(storeId);
 			}
 		} else {
 			tokens.add(actor.getMoodleToken());
@@ -107,7 +108,7 @@ public class MoodleStatementGenerator {
 
 	/**
 	 * @param forumids Array of module ids which belong to recently updated forums
-	 * @param since    time of oldes changes to get included
+	 * @param since    time of old changes to get included
 	 * @return Returns an ArrayList of new discussions and discussion posts
 	 * @throws IOException if an I/O exception occurs.
 	 */
@@ -116,7 +117,7 @@ public class MoodleStatementGenerator {
 		ArrayList<String> forumUpdates = new ArrayList<String>();
 		for (int forumid : forumids) {
 			JSONArray discussions = moodle.mod_forum_get_forum_discussions(forumid);
-			logger.info("Got discussions:\n" + discussions.toString());
+			//logger.info("Got discussions:\n" + discussions.toString()); // This was causing some flooding
 			for (Object discussionObj : discussions) {
 				JSONObject discussion = (JSONObject) discussionObj;
 
@@ -195,7 +196,7 @@ public class MoodleStatementGenerator {
 					continue;
 				}
 				
-				logger.info("Got submission:\n" + submission.toString());
+				//logger.info("Got submission:\n" + submission.toString()); //This was causing some flooding
 				int userID = userReport.getInt("userid");
 				MoodleUser actor = getUser(userID, courseID);
 				MoodleExercise exercise = (MoodleExercise) getModule(submission.getInt("cmid"));

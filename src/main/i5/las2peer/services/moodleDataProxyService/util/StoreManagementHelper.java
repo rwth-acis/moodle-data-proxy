@@ -14,13 +14,7 @@ public class StoreManagementHelper {
     /**
      * Name of the directory where the property files will be stored.
      */
-    private static final String TMP_DIR = "store_assignment";
-
-    /**
-     * Name of the file where the store properties will be stored. This file consists of key-value pairs, where the
-     * key is a store name and the value its client ID.
-     */
-    private static final String STORES_FILENAME = "stores.properties";
+    private static final String TMP_DIR = "config";
 
     /**
      * Name of the file where the course assignments will be stored. This file consists of key-value pairs, where the
@@ -28,103 +22,45 @@ public class StoreManagementHelper {
      */
     private static final String ASSIGNMENT_FILENAME = "store_assignment.properties";
 
-
-    /**
-     * Map containing the store names and their respective client tokens.
-     */
-    private static HashMap<String,String> storeMap = new HashMap<>();
-
     /**
      * Map containing the assignment of courses to stores.
      */
     private static HashMap<String,ArrayList<String>> assignmentMap = new HashMap<>();
 
     /**
-     * Flag that is set when the assignment of courses to stores should be performed.
-     */
-    private static boolean storeAssignmentEnabled = false;
-
-    /**
-     * Updates the stores file and returns a Map object of the assignment.
-     *
-     * @param storesInputStream Input stream containing the property file for the stores
-     * @throws IOException
-     */
-    public static void updateStores(InputStream storesInputStream)
-            throws IOException {
-        createTmpDir();
-        FileUtils.copyInputStreamToFile(storesInputStream, new File(TMP_DIR, STORES_FILENAME));
-
-        storeMap = loadStores();
-    }
-
-    /**
      * Updates the assignment file and returns a Map object of the assignment.
      *
      * @param assignmentsInputStream Input stream containing the property file for the course assignments
-     * @throws IOException
      */
     public static void updateAssignments(InputStream assignmentsInputStream)
-            throws IOException, StoreManagementParseException {
-        createTmpDir();
-        File temp_file = new File(TMP_DIR, "temp_" + ASSIGNMENT_FILENAME);
-        FileUtils.copyInputStreamToFile(assignmentsInputStream, temp_file);
+            throws StoreManagementParseException {
 
-        FileInputStream tempStream = new FileInputStream(new File(TMP_DIR, "temp_" + ASSIGNMENT_FILENAME));
-        Properties assignmentsProp = new Properties();
-        assignmentsProp.load(tempStream);
+        try {
+            // Check if input is a valid .properties file (if it is not, IOException is raised)
+            Properties assignmentsProp = new Properties();
+            assignmentsProp.load(assignmentsInputStream);
 
-        // Check if all stores are contained in the stores list
-        for (Entry<Object,Object> entry : assignmentsProp.entrySet()) {
-            String courseId = entry.getKey().toString();
-            String value = entry.getValue().toString();
-            System.out.println(storeMap);
-            System.out.println(value);
-            ArrayList<String> assignedStores = new ArrayList<>(Arrays.asList(value.split(",")));
-            System.out.println(assignedStores);
-            for (String store : assignedStores) {
-                System.out.println(storeMap.get(store));
-                if (storeMap.get(store) == null) {
-                    temp_file.delete();
-                    throw new StoreManagementParseException(courseId, store);
-                }
+
+            // If valid, replace existing file and load it
+            createTmpDir();
+            File assignmentFile = new File(TMP_DIR, ASSIGNMENT_FILENAME);
+            if (assignmentFile.exists()) {
+                assignmentFile.delete();
             }
+            FileOutputStream os = new FileOutputStream(assignmentFile);
+            assignmentsProp.store(os, "");
+            assignmentMap = loadAssignments();
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
-        File assignmentFile = new File(TMP_DIR, ASSIGNMENT_FILENAME);
-        if (assignmentFile.exists()) {
-            assignmentFile.delete();
-        }
-        temp_file.renameTo(assignmentFile);
-        assignmentMap = loadAssignments();
-    }
-
-    /**
-     * Parses the stores property file and returns the store IDs and access tokens as key-value pairs in a HashMap.
-     *
-     * @return Assignment of courses to stores as a HasHMap.
-     * @throws IOException
-     */
-    public static HashMap<String,String> loadStores() throws IOException{
-        InputStream input = new FileInputStream(new File(TMP_DIR, STORES_FILENAME));
-        Properties prop = new Properties();
-        prop.load(input);
-
-        HashMap<String,String> result = new HashMap<>();
-        for (Entry<Object,Object> entry : prop.entrySet()) {
-            String key = entry.getKey().toString();
-            String value = entry.getValue().toString();
-
-            result.put(key, value);
-        }
-        return result;
     }
 
     /**
      * Parses the assignment property file and returns the assignment as a HashMap.
      *
      * @return Assignment of courses to stores as a HasHMap.
-     * @throws IOException
+     * @throws IOException if there is a IO problem
      */
     public static HashMap<String,ArrayList<String>> loadAssignments() throws IOException{
         InputStream assignmentsInput = new FileInputStream(new File(TMP_DIR, ASSIGNMENT_FILENAME));
@@ -147,7 +83,7 @@ public class StoreManagementHelper {
      * Creates a temporary folder (if it doesn't already exist).
      * This folder is used for persisting the assignment of courses to stores.
      *
-     * @throws IOException
+     * @throws IOException if there is a IO problem
      */
     private static void createTmpDir() throws IOException {
         File tmpDir = new File(TMP_DIR);
@@ -162,14 +98,6 @@ public class StoreManagementHelper {
      */
     public static boolean isStoreAssignmentEnabled() {
         return (new File(TMP_DIR, ASSIGNMENT_FILENAME)).exists();
-    }
-
-    /**
-     * Checks if the file for the store assignment exists.
-     * @return Whether the file for the store assignment exists.
-     */
-    public static boolean isStoreListEnabled() {
-        return (new File(TMP_DIR, STORES_FILENAME)).exists();
     }
 
     /**
@@ -188,20 +116,8 @@ public class StoreManagementHelper {
         return assignmentMap.get(courseId);
     }
 
-    public static String getClientId(String storeId) {
-        return storeMap.get(storeId);
-    }
-
     public static void resetAssignment() {
         assignmentMap = new HashMap<>();
-    }
-
-    public static void enableStoreAssignment() {storeAssignmentEnabled = true;}
-
-    public static void disableStoreAssignment() {storeAssignmentEnabled = false;}
-
-    public static int numberOfStores() {
-        return storeMap.size();
     }
 
     public static int numberOfAssignments() {
