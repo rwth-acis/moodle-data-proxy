@@ -45,13 +45,56 @@ To start the moodle-data-proxy service, follow the [Starting-A-las2peer-Network 
 Sending Moodle data to MobSOS
 -----------------------
 
-Send Moodle data to MobSOS is facilitated by a thread which is executed once every minute to retrieve new activities.
+The sending of Moodle data to MobSOS is performed by a thread which is executed once every minute to retrieve new activities.
 The thread has to be started using a POST request after the node was successfully started and connected to the las2peer network.
 The POST request has to be sent by a registered las2peer user with the same email address as the one registered to the provided moodleToken.
 How to send the POST request as a registered las2peer user is described [here](https://github.com/rwth-acis/las2peer/tree/master/webconnector#using-oidc-with-las2peer).
 Send the request to the following path using the necessary authorization:
 ```
 POST <service-address>/moodle/
+```
+
+Setting a Whitelist
+-------------------
+
+One can specify a whitelist of users for whom xAPI statements are to be created and sent to MobSOS.
+Only xAPI statements referring to users in the whitelist will be sent to MobSOS.
+The specified whitelist is saved as a CSV file locally that is automatically reloaded if the Data Proxy is restarted.
+In the file, the users' e-mails should be separated by comma, for example:
+```
+user1@example.com,user2@example.com,user3@example.com
+```
+The whitelist file can be set by sending a POST request to the Data Proxy service after the node was successfully started and connected to the las2peer network.
+Send the request to the following path using the necessary authorization:
+```
+POST <service-address>/moodle/config/setWhiteList
+```
+The POST request's body should be formatted as a multipart form, and the CSV file containing the whitelisted users should be included in a part named "whitelist".
+One can also disable the whitelist by sending an empty POST request to the following path:
+```
+POST <service-address>/moodle/config/disableWhitelist
+```
+
+Assigning Courses to Stores
+---------------------------
+
+By default, xAPI statements sent to MobSOS from all courses are redirected to the default LRS store assigned do the admin client ID.
+If one desires, one could instead choose to assign Moodle courses to specific LRS stores.
+This assignment is kept in a `.properties` file, for example:
+```
+courseid1=clientid1
+courseid2=clientid2,clientid3,clientid4
+```
+The key represents the ID of a course, and the value should be a comma-separated list of LRS client IDs that are assigned to the desired stores.
+The assignment file can be set by sending a POST request to the Data Proxy service after the node was successfully started and connected to the las2peer network.
+Send the request to the following path using the necessary authorization:
+```
+POST <service-address>/moodle/config/setStoreAssignment
+```
+The POST request's body should be formatted as a multipart form, and the `.properties` file containing the course-store assignments should be included in a part named "storeAssignment".
+One can also disable the assignment by sending an empty POST request to the following path:
+```
+POST <service-address>/moodle/config/disableStoreAssignment
 ```
 
 How to run using Docker
