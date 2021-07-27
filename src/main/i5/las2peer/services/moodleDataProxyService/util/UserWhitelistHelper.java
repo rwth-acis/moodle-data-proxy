@@ -13,7 +13,7 @@ import org.apache.commons.io.FileUtils;
 
 public class UserWhitelistHelper {
 
-	private static final String TMP_DIR = "whitelist";
+	private static final String TMP_DIR = "config";
 	private static final String WHITELIST_FILENAME = "user_whitelist.csv";
 	
 	/**
@@ -21,20 +21,21 @@ public class UserWhitelistHelper {
 	 * If multiple lines of the CSV file are used and every line contains one email address, then
 	 * the separator does not matter.
 	 */
-	private static final String COMMA = ";";
+	private static final String COMMA = ",";
 
 	/**
 	 * Updates the user whitelist file stored in the {@value #TMP_DIR} directory.
 	 * 
 	 * @param whitelistInputStream InputStream of whitelist as CSV.
 	 * @return List of email addresses from the given InputStream.
-	 * @throws IOException
+	 * @throws IOException if there is a IO problem
 	 * @throws WhitelistParseException If the first line of the file is null.
 	 */
 	public static List<String> updateWhitelist(InputStream whitelistInputStream)
 			throws IOException, WhitelistParseException {
-		// create tmp dir if not existing and clean directory if existing
+		// create tmp dir if not existing and remove whitelist file if existing
 		UserWhitelistHelper.createTmpDir();
+		UserWhitelistHelper.removeWhitelistFile();
 
 		// store given csv from input stream to file
 		FileUtils.copyInputStreamToFile(whitelistInputStream, UserWhitelistHelper.getWhitelistFile());
@@ -48,7 +49,7 @@ public class UserWhitelistHelper {
 	 * 1) The first line contains the email addresses separated by {@value #COMMA}.
 	 * 2) Every line of the file contains one email address.
 	 * @return List of email addresses stored in the user whitelist file.
-	 * @throws IOException
+	 * @throws IOException if there is a IO problem
 	 * @throws WhitelistParseException If the first line of the file is null.
 	 */
 	public static List<String> loadWhitelist() throws IOException, WhitelistParseException {
@@ -114,8 +115,6 @@ public class UserWhitelistHelper {
 		File tmpDir = UserWhitelistHelper.getTmpDir();
 		if (!tmpDir.exists()) {
 			FileUtils.forceMkdir(tmpDir.getAbsoluteFile());
-		} else {
-			FileUtils.cleanDirectory(tmpDir.getAbsoluteFile());
 		}
 	}
 
