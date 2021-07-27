@@ -173,9 +173,6 @@ public class MoodleDataProxyService extends RESTService {
 		}
 
 		// check if store assignment file exists and enable the assignment in that case
-		if (StoreManagementHelper.isStoreAssignmentEnabled()) {
-			StoreManagementHelper.enableStoreAssignment();
-		};
 		if(StoreManagementHelper.isStoreAssignmentEnabled()) {
 			logger.info("Found store assignment file, enabling assignment...");
 			try {
@@ -450,7 +447,6 @@ public class MoodleDataProxyService extends RESTService {
 
 			try {
 				StoreManagementHelper.updateAssignments(storesInputStream);
-				StoreManagementHelper.enableStoreAssignment();
 				logger.info("Added store assignment.");
 				return Response.status(200).entity("Added store assignment with " +
 						StoreManagementHelper.numberOfAssignments() + " assignments.").build();
@@ -486,7 +482,6 @@ public class MoodleDataProxyService extends RESTService {
 			boolean success = StoreManagementHelper.removeAssignmentFile();
 			if(success) {
 				StoreManagementHelper.resetAssignment();
-				StoreManagementHelper.disableStoreAssignment();
 				return Response.status(Status.OK).entity("Disabled store assignment.").build();
 			} else {
 				return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity("Unable to disable store assignment.").build();
