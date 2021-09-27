@@ -24,7 +24,7 @@ public class MoodleWebServiceConnection {
 	private static String restFormat = "&moodlewsrestformat=json";
 
 	/**
-	 * @param token access token for the moodle instance
+	 * @param token      access token for the moodle instance
 	 * @param domainName domain of the moodle instance
 	 */
 	public MoodleWebServiceConnection(String token, String domainName) {
@@ -39,8 +39,9 @@ public class MoodleWebServiceConnection {
 	/**
 	 * This function requests a Rest function to the initiated moodle web server.
 	 *
-	 * @param functionName This the function name for the moodle rest request.
-	 * @param urlParameters These are the parameters in one String for the moodle rest request.
+	 * @param functionName  This the function name for the moodle rest request.
+	 * @param urlParameters These are the parameters in one String for the moodle
+	 *                      rest request.
 	 * @return Returns the output of the moodle rest request.
 	 * @throws IOException if an I/O exception occurs.
 	 **/
@@ -80,8 +81,45 @@ public class MoodleWebServiceConnection {
 		return response.toString();
 	}
 
+	private String specRestRequest(String functionName, String urlParameters) throws IOException {
+		// Send request
+		String serverUrl = domainName + "/webservice/rest/server.php" + "?wstoken=" + "5284de17d98574c687e9ff48f00c3e8e"
+				+ "&wsfunction=" + functionName + restFormat;
+
+		HttpURLConnection con = (HttpURLConnection) new URL(serverUrl).openConnection();
+
+		con.setRequestMethod("POST");
+		con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+		con.setRequestProperty("Content-Language", "en-US");
+		con.setDoOutput(true);
+		con.setUseCaches(false);
+		con.setDoInput(true);
+
+		DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+
+		if (urlParameters != null) {
+			wr.writeBytes(urlParameters);
+		}
+		wr.flush();
+		wr.close();
+
+		// Get Response
+		InputStream is = con.getInputStream();
+		BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+		String line;
+		StringBuilder response = new StringBuilder();
+		while ((line = rd.readLine()) != null) {
+			response.append(line);
+			response.append('\r');
+		}
+		rd.close();
+
+		return response.toString();
+	}
+
 	/**
-	 * @return Returns the information to all courses in moodle (the user has access to)
+	 * @return Returns the information to all courses in moodle (the user has access
+	 *         to)
 	 * @throws IOException if an I/O exception occurs.
 	 **/
 	public JSONArray core_course_get_courses() throws IOException {
@@ -117,7 +155,7 @@ public class MoodleWebServiceConnection {
 		System.out.println(Integer.toString(value));
 		String urlParameters = "field=" + URLEncoder.encode(field, "UTF-8");
 		urlParameters += "&values[0]=" + URLEncoder.encode(Integer.toString(value), "UTF-8");
-		JSONArray userJSON = new JSONArray(restRequest("core_user_get_users_by_field", urlParameters));
+		JSONArray userJSON = new JSONArray(specRestRequest("core_user_get_users_by_field", urlParameters));
 		return userJSON.getJSONObject(0);
 	}
 
@@ -134,7 +172,7 @@ public class MoodleWebServiceConnection {
 
 	/**
 	 * @param courseId id of the course you want to have updates
-	 * @param since long containing the unix timestamp
+	 * @param since    long containing the unix timestamp
 	 * @return updates since given timestamp
 	 * @throws IOException if an I/O exception occurs.
 	 */
@@ -144,7 +182,6 @@ public class MoodleWebServiceConnection {
 		JSONObject updateJSON = new JSONObject(restRequest("core_course_get_updates_since", urlParameters));
 		return updateJSON.getJSONArray("instances");
 	}
-
 
 	/**
 	 * @param courseId id of the course you want to have updates
@@ -157,7 +194,8 @@ public class MoodleWebServiceConnection {
 	}
 
 	/**
-	 * @param assignmentId id of the assignment you want to get the submissions from.
+	 * @param assignmentId id of the assignment you want to get the submissions
+	 *                     from.
 	 * @return submissions for given id.
 	 * @throws IOException if an I/O exception occurs.
 	 */
@@ -180,7 +218,8 @@ public class MoodleWebServiceConnection {
 
 	/**
 	 * @param courseId This is Id of the course you want to have grades of
-	 * @return Returns grades for all users, who are enrolled in the specified course
+	 * @return Returns grades for all users, who are enrolled in the specified
+	 *         course
 	 * @throws IOException if an I/O exception occurs.
 	 **/
 	public JSONArray gradereport_user_get_grade_items(int courseId) throws IOException {
@@ -191,7 +230,7 @@ public class MoodleWebServiceConnection {
 
 	/**
 	 * @param courseId This is Id of the course you want to have grades of
-	 * @param userId This is Id of the user you want to have grades of
+	 * @param userId   This is Id of the user you want to have grades of
 	 * @return Returns grades for the specified course and user
 	 * @throws IOException if an I/O exception occurs.
 	 **/
@@ -216,9 +255,9 @@ public class MoodleWebServiceConnection {
 	 * @return Returns attempt information for the specified course
 	 * @throws IOException if an I/O exception occurs.
 	 */
-	public JSONArray mod_quiz_get_user_attempts (int quizId, int userId) throws IOException {
-		String urlParameters = "quizid=" + URLEncoder.encode(Integer.toString(quizId), "UTF-8") +
-		"userid=" + URLEncoder.encode(Integer.toString(userId), "UTF-8");
+	public JSONArray mod_quiz_get_user_attempts(int quizId, int userId) throws IOException {
+		String urlParameters = "quizid=" + URLEncoder.encode(Integer.toString(quizId), "UTF-8") + "userid="
+				+ URLEncoder.encode(Integer.toString(userId), "UTF-8");
 		JSONObject attemptsJSON = new JSONObject(restRequest("mod_quiz_get_user_attempts", urlParameters));
 		return attemptsJSON.getJSONArray("attempts");
 	}
@@ -255,7 +294,8 @@ public class MoodleWebServiceConnection {
 	}
 
 	/**
-	 * @param discussionid This is Id of the discussion which posts should be returned
+	 * @param discussionid This is Id of the discussion which posts should be
+	 *                     returned
 	 * @return Returns posts of the specified discussion
 	 * @throws IOException if an I/O exception occurs.
 	 */
@@ -297,7 +337,7 @@ public class MoodleWebServiceConnection {
 
 	/**
 	 * @param courseId id of the course you want to have events
-	 * @param since long containing the unix timestamp of oldest event
+	 * @param since    long containing the unix timestamp of oldest event
 	 * @return events since given timestamp
 	 * @throws IOException if an I/O exception occurs.
 	 */
