@@ -113,6 +113,8 @@ public class MoodleWebServiceConnection {
 	 * @throws IOException if an I/O exception occurs.
 	 */
 	public JSONObject core_user_get_users_by_field(String field, int value) throws IOException {
+		System.out.println(field);
+		System.out.println(Integer.toString(value));
 		String urlParameters = "field=" + URLEncoder.encode(field, "UTF-8");
 		urlParameters += "&values[0]=" + URLEncoder.encode(Integer.toString(value), "UTF-8");
 		JSONArray userJSON = new JSONArray(restRequest("core_user_get_users_by_field", urlParameters));
