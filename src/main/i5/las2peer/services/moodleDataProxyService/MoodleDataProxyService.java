@@ -308,9 +308,9 @@ public class MoodleDataProxyService extends RESTService {
 			logger.warning("Proxy service uses blockchain verification and consent checks");
 		}
 
-		if (!isMainAgentMoodleTokenOwner()) {
-			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
-		}
+		// if (!isMainAgentMoodleTokenOwner()) {
+		// 	return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		// }
 
 		monitorCall("moodle");
 
