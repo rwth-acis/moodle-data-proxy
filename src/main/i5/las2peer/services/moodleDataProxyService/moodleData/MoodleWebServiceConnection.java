@@ -133,7 +133,7 @@ public class MoodleWebServiceConnection {
 	 **/
 	public JSONArray core_enrol_get_enrolled_users(int courseId) throws IOException {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
-		return new JSONArray(restRequest("core_enrol_get_enrolled_users", urlParameters));
+		return new JSONArray(specRestRequest("core_enrol_get_enrolled_users", urlParameters));
 	}
 
 	/**
