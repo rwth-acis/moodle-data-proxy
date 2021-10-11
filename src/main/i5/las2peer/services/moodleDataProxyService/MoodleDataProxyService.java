@@ -581,7 +581,7 @@ public class MoodleDataProxyService extends RESTService {
 							"checkUserConsent", userEmail, verb);
 					if (consentGiven) {
 						System.out.println("coooonnsnet ttruueueeeeee");
-						statementJSON.put("token", statementJSONTemp.getJSONObject(0).toString());
+						statementJSON.put("token", statementJSONTemp.getString(0));
 						System.out.println("statementJSONTemp.toString()statementJSONTemp.toString()");
 						System.out.println("statementJSONTemp.toString()statementJSONTemp.toString()");
 						System.out.println("statementJSONTemp.toString()statementJSONTemp.toString()");
