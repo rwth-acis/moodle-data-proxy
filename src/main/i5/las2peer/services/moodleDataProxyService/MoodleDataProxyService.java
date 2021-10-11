@@ -140,7 +140,7 @@ public class MoodleDataProxyService extends RESTService {
 
 		// Change variable to false in orded to check proxy functionality independent
 		// from the verification service.
-		usesBlockchainVerification = false;
+		usesBlockchainVerification = true;
 
 		// check if whitelist file exists and enable whitelist in that case
 		userWhitelistEnabled = UserWhitelistHelper.isWhitelistEnabled();
