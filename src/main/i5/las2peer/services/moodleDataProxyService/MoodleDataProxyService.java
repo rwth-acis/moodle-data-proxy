@@ -544,11 +544,13 @@ public class MoodleDataProxyService extends RESTService {
 			System.out.println(message);
 			System.out.println("messagemessagemessagemessagemessagemessagemessagemessage");
 			JSONObject statementJSON = null;
+			JSONArray statementJSONTemp = null;
 			try {
 				System.out.println("messagemessagemessagemessagemessagemessagemessagemessage");
 				System.out.println("messagemessagemessagemessagemessagemessagemessagemessage");
 				JSONObject msgObj = new JSONObject(message);
 				statementJSON = (JSONObject) msgObj.get("statement");
+				statementJSONTemp = (JSONArray) msgObj.get("tokens");
 			} catch (Exception e) {
 				System.out.println("messagemessagemessagemessagemessagemessagemessagemessage");
 				System.out.println("Error parsing message to JSON: " + message);
@@ -579,6 +581,12 @@ public class MoodleDataProxyService extends RESTService {
 							"checkUserConsent", userEmail, verb);
 					if (consentGiven) {
 						System.out.println("coooonnsnet ttruueueeeeee");
+						statementJSON.put("token", statementJSONTemp.getJSONObject(0).toString());
+						System.out.println("statementJSONTemp.toString()statementJSONTemp.toString()");
+						System.out.println("statementJSONTemp.toString()statementJSONTemp.toString()");
+						System.out.println("statementJSONTemp.toString()statementJSONTemp.toString()");
+						System.out.println("statementJSONTemp.toString()statementJSONTemp.toString()");
+						System.out.println(statementJSONTemp.toString());
 
 						// If consent for data extraction is given create log entry with included data
 						context.invokeInternally(
