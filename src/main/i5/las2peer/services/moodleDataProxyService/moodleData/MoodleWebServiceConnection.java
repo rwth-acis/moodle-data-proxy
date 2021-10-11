@@ -133,7 +133,7 @@ public class MoodleWebServiceConnection {
 	 **/
 	public JSONArray core_enrol_get_enrolled_users(int courseId) throws IOException {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
-		return new JSONArray(specRestRequest("core_enrol_get_enrolled_users", urlParameters));
+		return new JSONArray(restRequest("core_enrol_get_enrolled_users", urlParameters));
 	}
 
 	/**
@@ -155,7 +155,7 @@ public class MoodleWebServiceConnection {
 		System.out.println(Integer.toString(value));
 		String urlParameters = "field=" + URLEncoder.encode(field, "UTF-8");
 		urlParameters += "&values[0]=" + URLEncoder.encode(Integer.toString(value), "UTF-8");
-		JSONArray userJSON = new JSONArray(specRestRequest("core_user_get_users_by_field", urlParameters));
+		JSONArray userJSON = new JSONArray(restRequest("core_user_get_users_by_field", urlParameters));
 		return userJSON.getJSONObject(0);
 	}
 
