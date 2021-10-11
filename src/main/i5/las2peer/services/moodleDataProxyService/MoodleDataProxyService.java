@@ -51,19 +51,13 @@ import i5.las2peer.services.moodleDataProxyService.util.WhitelistParseException;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleStatementGenerator;
 
 @Api
-@SwaggerDefinition(
-		info = @Info(
-				title = "Moodle Data Proxy Service",
-				version = "1.3.0",
-				description = "A proxy for requesting data from moodle",
-				contact = @Contact(
-						name = "Boris Jovanovic",
-						email = "jovanovic.boris@rwth-aachen.de")))
+@SwaggerDefinition(info = @Info(title = "Moodle Data Proxy Service", version = "1.3.0", description = "A proxy for requesting data from moodle", contact = @Contact(name = "Boris Jovanovic", email = "jovanovic.boris@rwth-aachen.de")))
 
 /**
  *
- * This service is for requesting moodle data and creating corresponding xAPI statement. It sends REST requests to
- * moodle on basis of implemented functions in MoodleWebServiceConnection.
+ * This service is for requesting moodle data and creating corresponding xAPI
+ * statement. It sends REST requests to moodle on basis of implemented functions
+ * in MoodleWebServiceConnection.
  *
  */
 @ManualDeployment
@@ -89,24 +83,15 @@ public class MoodleDataProxyService extends RESTService {
 	private final static int MOODLE_LAST_UPDATE_BUFFER_TIME = 3600; // Maximum
 	private static long lastChecked = 0;
 	private static String email = "";
-	
+
 	private static boolean userWhitelistEnabled = false;
 	private static List<String> userWhitelist = new ArrayList<>();
 
-
-	private final static Set<String> REQUIRED_MOODLE_FUNCTIONS = new HashSet<String>(Arrays.asList(
-		"core_course_get_courses",
-		"core_enrol_get_enrolled_users",
-		"core_webservice_get_site_info",
-		"core_user_get_users_by_field",
-		"core_course_get_course_module",
-		"core_course_get_updates_since",
-		"gradereport_user_get_grade_items",
-		"mod_quiz_get_user_attempts",
-		"mod_forum_get_forum_discussions",
-		"mod_forum_get_discussion_posts",
-		"local_t4c_get_recent_course_activities"
-	));
+	private final static Set<String> REQUIRED_MOODLE_FUNCTIONS = new HashSet<String>(
+			Arrays.asList("core_course_get_courses", "core_enrol_get_enrolled_users", "core_webservice_get_site_info",
+					"core_user_get_users_by_field", "core_course_get_course_module", "core_course_get_updates_since",
+					"gradereport_user_get_grade_items", "mod_quiz_get_user_attempts", "mod_forum_get_forum_discussions",
+					"mod_forum_get_discussion_posts", "local_t4c_get_recent_course_activities"));
 	private static Set<String> enabledMoodleFunctions = new HashSet<>();
 
 	@Override
@@ -156,10 +141,10 @@ public class MoodleDataProxyService extends RESTService {
 		// Change variable to false in orded to check proxy functionality independent
 		// from the verification service.
 		usesBlockchainVerification = false;
-		
+
 		// check if whitelist file exists and enable whitelist in that case
 		userWhitelistEnabled = UserWhitelistHelper.isWhitelistEnabled();
-		if(userWhitelistEnabled) {
+		if (userWhitelistEnabled) {
 			logger.info("Found user whitelist file, enabling whitelist...");
 			try {
 				userWhitelist = UserWhitelistHelper.loadWhitelist();
@@ -173,7 +158,7 @@ public class MoodleDataProxyService extends RESTService {
 		}
 
 		// check if store assignment file exists and enable the assignment in that case
-		if(StoreManagementHelper.isStoreAssignmentEnabled()) {
+		if (StoreManagementHelper.isStoreAssignmentEnabled()) {
 			logger.info("Found store assignment file, enabling assignment...");
 			try {
 				StoreManagementHelper.loadAssignments();
@@ -218,11 +203,11 @@ public class MoodleDataProxyService extends RESTService {
 	}
 
 	/**
-	 * Method that runs a check whether the given Moodle token has access to all
-	 * the necessary Moodle API Web service functions. Results are then logged.
+	 * Method that runs a check whether the given Moodle token has access to all the
+	 * necessary Moodle API Web service functions. Results are then logged.
 	 *
-	 * @param webserviceInfoResponse The response JSON Object of the core_webservice_get_site_info
-	 * Moodle function.
+	 * @param webserviceInfoResponse The response JSON Object of the
+	 *                               core_webservice_get_site_info Moodle function.
 	 * 
 	 * @return void
 	 *
@@ -232,7 +217,7 @@ public class MoodleDataProxyService extends RESTService {
 			logger.info("Checking if required Moodle web service functions are enabled with token...");
 			JSONArray functions = new JSONArray();
 			try {
-				functions = webserviceInfoResponse.getJSONArray("functions");				
+				functions = webserviceInfoResponse.getJSONArray("functions");
 			} catch (Exception e) {
 				logger.severe("Error while parsing response from Moodle function core_webservice_get_site_info!");
 				return;
@@ -242,18 +227,17 @@ public class MoodleDataProxyService extends RESTService {
 			for (Object item : functions) {
 				String webservice;
 				try {
-					webservice = ((JSONObject) item).getString("name");			
+					webservice = ((JSONObject) item).getString("name");
 				} catch (Exception e) {
 					logger.severe("Error while parsing response from Moodle function core_webservice_get_site_info!");
 					return;
 				}
 				enabledFunctionSet.add(webservice);
 
-				//Prints out the functions with ticks if required, else without them
+				// Prints out the functions with ticks if required, else without them
 				if (REQUIRED_MOODLE_FUNCTIONS.contains(webservice)) {
 					logger.info(webservice + " " + (char) 10003);
-				}
-				else {
+				} else {
 					logger.info(webservice);
 				}
 			}
@@ -263,8 +247,7 @@ public class MoodleDataProxyService extends RESTService {
 
 			if (enabledFunctionSet.containsAll(REQUIRED_MOODLE_FUNCTIONS)) {
 				logger.info("All required Moodle functions enabled.");
-			}
-			else {
+			} else {
 				Set<String> missingFunctions = new HashSet<String>(REQUIRED_MOODLE_FUNCTIONS);
 				missingFunctions.removeAll(enabledFunctionSet);
 				logger.warning("The following Moodle functions have not been enabled with the used token:");
@@ -278,12 +261,12 @@ public class MoodleDataProxyService extends RESTService {
 	}
 
 	/**
-	 * Method that checks if a Moodle function is enabled.
-	 * Uses the enabledMoodleFunctions set which is populated
-	 * during the moodleFunctionSurvey.
+	 * Method that checks if a Moodle function is enabled. Uses the
+	 * enabledMoodleFunctions set which is populated during the
+	 * moodleFunctionSurvey.
 	 * 
-	 * @param functionName Full name of the moodle function,
-	 * e.g. core_course_get_course_module.
+	 * @param functionName Full name of the moodle function, e.g.
+	 *                     core_course_get_course_module.
 	 * @return True if function is enabled, false otherwise.
 	 */
 	public static boolean isMoodleFunctionEnabled(String functionName) {
@@ -293,23 +276,22 @@ public class MoodleDataProxyService extends RESTService {
 	@POST
 	@Path("/")
 	@Produces(MediaType.TEXT_PLAIN)
-	@ApiResponses(
-			value = { @ApiResponse(
-					code = HttpURLConnection.HTTP_OK,
-					message = "Moodle connection is initiated") })
+	@ApiResponses(value = {
+			@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Moodle connection is initiated") })
 	@RolesAllowed("authenticated")
 	public Response initMoodleProxy() {
 		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
 			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
 		}
 
-		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
+		// TODO: If flag is set, make sure the privacy control service is up and running
+		// before initiating.
 		if (usesBlockchainVerification) {
 			logger.warning("Proxy service uses blockchain verification and consent checks");
 		}
 
 		// if (!isMainAgentMoodleTokenOwner()) {
-		// 	return Response.status(Status.FORBIDDEN).entity("Access denied").build();
+		// return Response.status(Status.FORBIDDEN).entity("Access denied").build();
 		// }
 
 		monitorCall("moodle");
@@ -328,29 +310,17 @@ public class MoodleDataProxyService extends RESTService {
 		}
 	}
 
-	@Api(
-			value = "Proxy Configuration")
-	@SwaggerDefinition(
-			info = @Info(
-					title = "Moodle Data-Proxy",
-					version = "1.3.0",
-					description = "A las2peer service for generating xAPI statements from Moodle updates.",
-					termsOfService = "",
-					contact = @Contact(
-							name = "Leonardo Gomes da Matta e Silva",
-							url = "",
-							email = "leonardo.matta@rwth-aachen.de"),
-					license = @License(
-							name = "",
-							url = "")))
+	@Api(value = "Proxy Configuration")
+	@SwaggerDefinition(info = @Info(title = "Moodle Data-Proxy", version = "1.3.0", description = "A las2peer service for generating xAPI statements from Moodle updates.", termsOfService = "", contact = @Contact(name = "Leonardo Gomes da Matta e Silva", url = "", email = "leonardo.matta@rwth-aachen.de"), license = @License(name = "", url = "")))
 	@Path("/config")
 	public static class ProxyConfiguration {
 		MoodleDataProxyService proxyservice = (MoodleDataProxyService) Context.get().getService();
 
 		/**
-		 * Method to set a user whitelist for the proxy.
-		 * Takes a CSV file containing the email addresses of users that should be on the whitelist.
-		 * Only data of these users is sent to MobSOS.
+		 * Method to set a user whitelist for the proxy. Takes a CSV file containing the
+		 * email addresses of users that should be on the whitelist. Only data of these
+		 * users is sent to MobSOS.
+		 * 
 		 * @param whitelistInputStream Input stream of the passed CSV file.
 		 * @return Status message
 		 */
@@ -358,18 +328,17 @@ public class MoodleDataProxyService extends RESTService {
 		@Path("/setWhitelist")
 		@Produces(MediaType.TEXT_PLAIN)
 		@Consumes(MediaType.MULTIPART_FORM_DATA)
-		@ApiResponses(
-				value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Updated user whitelist."),
-						@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
-						@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied.") })
+		@ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Updated user whitelist."),
+				@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
+				@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied.") })
 		public Response setUserWhitelist(@FormDataParam("whitelist") InputStream whitelistInputStream) {
-		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		}
+			if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+				return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+			}
 
-		if (!proxyservice.isMainAgentMoodleTokenOwner()) {
-			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
-		}
+			if (!proxyservice.isMainAgentMoodleTokenOwner()) {
+				return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+			}
 
 			proxyservice.monitorCall("moodle/config/setWhitelist");
 
@@ -377,8 +346,8 @@ public class MoodleDataProxyService extends RESTService {
 				userWhitelist = UserWhitelistHelper.updateWhitelist(whitelistInputStream);
 				userWhitelistEnabled = true;
 				logger.info("Enabled whitelist containing " + userWhitelist.size() + " items.");
-				return Response.status(200).entity("Enabled whitelist containing " +
-						userWhitelist.size() + " items.").build();
+				return Response.status(200).entity("Enabled whitelist containing " + userWhitelist.size() + " items.")
+						.build();
 			} catch (IOException | WhitelistParseException e) {
 				return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(e.getMessage()).build();
 			}
@@ -386,41 +355,42 @@ public class MoodleDataProxyService extends RESTService {
 
 		/**
 		 * Method to disable the user whitelist.
+		 * 
 		 * @return Status message
 		 */
 		@POST
 		@Path("/disableWhitelist")
 		@Produces(MediaType.TEXT_PLAIN)
-		@ApiResponses(
-				value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Disabled user whitelist."),
-						@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
-						@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied."),
-						@ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "Unable to disable whitelist.")})
+		@ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Disabled user whitelist."),
+				@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
+				@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied."),
+				@ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "Unable to disable whitelist.") })
 		public Response disableUserWhitelist() {
-		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		}
+			if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+				return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+			}
 
-		if (!proxyservice.isMainAgentMoodleTokenOwner()) {
-			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
-		}
+			if (!proxyservice.isMainAgentMoodleTokenOwner()) {
+				return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+			}
 
 			proxyservice.monitorCall("moodle/config/disableWhitelist");
 
 			boolean success = UserWhitelistHelper.removeWhitelistFile();
-			if(success) {
+			if (success) {
 				proxyservice.userWhitelist = new ArrayList<>();
 				proxyservice.userWhitelistEnabled = false;
 				return Response.status(Status.OK).entity("Disabled whitelist.").build();
 			} else {
-				return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity("Unable to disable whitelist.").build();
+				return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity("Unable to disable whitelist.")
+						.build();
 			}
 		}
 
 		/**
-		 * Method for setting the assignments of Moodle courses to stores.
-		 * Takes a properties file containing the course IDs and a comma-separated list of store client IDs as key-value
-		 * pairs.
+		 * Method for setting the assignments of Moodle courses to stores. Takes a
+		 * properties file containing the course IDs and a comma-separated list of store
+		 * client IDs as key-value pairs.
 		 *
 		 * @param storesInputStream Input stream of the passed properties file.
 		 *
@@ -430,26 +400,26 @@ public class MoodleDataProxyService extends RESTService {
 		@Path("/setStoreAssignment")
 		@Produces(MediaType.TEXT_PLAIN)
 		@Consumes(MediaType.MULTIPART_FORM_DATA)
-		@ApiResponses(
-				value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Updated store assignment."),
-						@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
-						@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied.") })
+		@ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Updated store assignment."),
+				@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
+				@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied.") })
 		public Response setStoreAssignment(@FormDataParam("storeAssignment") InputStream storesInputStream) {
-		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		}
+			if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+				return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+			}
 
-		if (!proxyservice.isMainAgentMoodleTokenOwner()) {
-			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
-		}
+			if (!proxyservice.isMainAgentMoodleTokenOwner()) {
+				return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+			}
 
 			proxyservice.monitorCall("moodle/config/setStoreAssignment");
 
 			try {
 				StoreManagementHelper.updateAssignments(storesInputStream);
 				logger.info("Added store assignment.");
-				return Response.status(200).entity("Added store assignment with " +
-						StoreManagementHelper.numberOfAssignments() + " assignments.").build();
+				return Response.status(200).entity(
+						"Added store assignment with " + StoreManagementHelper.numberOfAssignments() + " assignments.")
+						.build();
 			} catch (StoreManagementParseException e) {
 				return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(e.getMessage()).build();
 			}
@@ -463,37 +433,35 @@ public class MoodleDataProxyService extends RESTService {
 		@POST
 		@Path("/disableStoreAssignment")
 		@Produces(MediaType.TEXT_PLAIN)
-		@ApiResponses(
-				value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Disabled store assignment."),
-						@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
-						@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied."),
-						@ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "Unable to disable store assignment.")})
+		@ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Disabled store assignment."),
+				@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Authorization required."),
+				@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied."),
+				@ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "Unable to disable store assignment.") })
 		public Response disableStoreAssignment() {
-		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
-			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		}
+			if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
+				return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
+			}
 
-		if (!proxyservice.isMainAgentMoodleTokenOwner()) {
-			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
-		}
+			if (!proxyservice.isMainAgentMoodleTokenOwner()) {
+				return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
+			}
 
 			proxyservice.monitorCall("moodle/config/disableStoreAssignment");
 
 			boolean success = StoreManagementHelper.removeAssignmentFile();
-			if(success) {
+			if (success) {
 				StoreManagementHelper.resetAssignment();
 				return Response.status(Status.OK).entity("Disabled store assignment.").build();
 			} else {
-				return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity("Unable to disable store assignment.").build();
+				return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR)
+						.entity("Unable to disable store assignment.").build();
 			}
 		}
 	}
 
-
-
 	/**
-	 * Thread which periodically checks all courses for events,
-	 * creates xAPI statements of new events and sends them to Mobsos.
+	 * Thread which periodically checks all courses for events, creates xAPI
+	 * statements of new events and sends them to Mobsos.
 	 *
 	 * @return void
 	 *
@@ -520,8 +488,10 @@ public class MoodleDataProxyService extends RESTService {
 						if (lastTimestamp <= updateTimestamp) {
 							lastTimestamp = updateTimestamp + 1;
 						}
+						System.out.println("check use constnt to sasjdasndhsajbdsahbjdhs")
 
 						if (!checkUserConsent(update)) {
+							System.out.println("check use constnt to decefre")
 							// Skip this update if acting user did not consent to data extraction.
 							numberOfUpdates--;
 							continue;
@@ -557,59 +527,82 @@ public class MoodleDataProxyService extends RESTService {
 			Object timestampObject = statementJSON.get("timestamp");
 			if (timestampObject instanceof Integer) {
 				return (long) timestampObject;
-			}
-			else if (timestampObject instanceof String) {
+			} else if (timestampObject instanceof String) {
 				try {
 					OffsetDateTime odt = OffsetDateTime.parse((String) timestampObject);
 					return odt.toEpochSecond();
 				} catch (Exception e) {
 					logger.severe("Could not parse DateTime format: " + message);
 				}
-			}
-			else {
+			} else {
 				logger.severe("Unkown timestamp format: " + message);
 			}
 			return 0;
 		}
 
 		private boolean checkUserConsent(String message) {
+			System.out.println(message);
+			System.out.println("messagemessagemessagemessagemessagemessagemessagemessage");
 			JSONObject statementJSON = null;
 			try {
+				System.out.println("messagemessagemessagemessagemessagemessagemessagemessage");
+				System.out.println("messagemessagemessagemessagemessagemessagemessagemessage");
 				JSONObject msgObj = new JSONObject(message);
 				statementJSON = (JSONObject) msgObj.get("statement");
 			} catch (Exception e) {
+				System.out.println("messagemessagemessagemessagemessagemessagemessagemessage");
+				System.out.println("Error parsing message to JSON: " + message);
+
 				logger.severe("Error parsing message to JSON: " + message);
 				return false;
 			}
-			
+
 			if (statementJSON.isNull("actor")) {
+				System.out.println("Message does not seem to contain personal data");
 				logger.warning("Message does not seem to contain personal data.");
 				return true;
 			}
-			
+
 			String userEmail = statementJSON.getJSONObject("actor").getJSONObject("account").getString("name");
-			
-			if(usesBlockchainVerification) {
+			System.out.println(userEmail);
+
+			if (usesBlockchainVerification) {
+				System.out.println("uuuussssses ");
 				String verb = statementJSON.getJSONObject("verb").getJSONObject("display").getString("en-US");
-				
+
 				logger.warning("Checking consent for email: " + userEmail + " and action: " + verb + " ...");
 				boolean consentGiven = false;
 				try {
-					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1", "checkUserConsent", userEmail, verb);
+					System.out.println("coooonnsnet");
+					consentGiven = (boolean) context.invokeInternally(
+							"i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1",
+							"checkUserConsent", userEmail, verb);
 					if (consentGiven) {
+						System.out.println("coooonnsnet ttruueueeeeee");
+
 						// If consent for data extraction is given create log entry with included data
-						context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1", "createLogEntry", message);
+						context.invokeInternally(
+								"i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1",
+								"createLogEntry", message);
 					}
+					System.out.println("fallalalallslsllele");
+
 				} catch (Exception e) {
 					e.printStackTrace();
 					return false;
 				}
+				System.out.println("Consent given");
+
 				logger.warning("Consent given: " + consentGiven);
+				System.out.println("Consent given");
+
 				return consentGiven;
 			}
-			
-			if(userWhitelistEnabled) {
+
+			if (userWhitelistEnabled) {
 				if (!userWhitelist.contains(userEmail)) {
+					System.out.println("Message not sent because user is not in the whitelist");
+
 					logger.warning("Message not sent because user is not in the whitelist.");
 					return false;
 				}
@@ -633,13 +626,14 @@ public class MoodleDataProxyService extends RESTService {
 			for (int courseID : courses) {
 				JSONArray usersJSON;
 				try {
-					usersJSON = moodle.core_enrol_get_enrolled_users(courseID);	
+					usersJSON = moodle.core_enrol_get_enrolled_users(courseID);
 				} catch (Exception e) {
-					logger.severe("Error while reaching core_enrol_get_enrolled_users while updating user info for course ID:"
-						+ courseID);
+					logger.severe(
+							"Error while reaching core_enrol_get_enrolled_users while updating user info for course ID:"
+									+ courseID);
 					continue;
 				}
-				
+
 				for (Object user : usersJSON) {
 					JSONObject userJSON = (JSONObject) user;
 					int userID;
@@ -647,14 +641,13 @@ public class MoodleDataProxyService extends RESTService {
 						userID = userJSON.getInt("id");
 					} catch (Exception e) {
 						logger.severe("Could not get user ID from core_enrol_get_enrolled_users while updating user. "
-						+ e.getStackTrace());
+								+ e.getStackTrace());
 						continue;
 					}
 					MoodleUser muser;
 					if (!tmpUserMap.containsKey(userID)) {
 						muser = new MoodleUser(userJSON);
-					}
-					else {
+					} else {
 						muser = tmpUserMap.get(userID);
 					}
 					// add roles
@@ -663,22 +656,25 @@ public class MoodleDataProxyService extends RESTService {
 						rolesJSON = userJSON.getJSONArray("roles");
 						muser.putCourseRoles(courseID, rolesJSON);
 					} catch (Exception e) {
-						logger.severe("Could not get user role from core_enrol_get_enrolled_users while updating user ID: "
-						+ userID + " " + e.getStackTrace());
+						logger.severe(
+								"Could not get user role from core_enrol_get_enrolled_users while updating user ID: "
+										+ userID + " " + e.getStackTrace());
 					}
-					
+
 					tmpUserMap.put(userID, muser);
 				}
 			}
-			
+
 			statements.setUserMap(tmpUserMap);
 		}
 
 	}
-	
+
 	/**
-	 * Checks whether the main las2peer agent is the owner of the moodle token, i.e. whether the 
-	 * email of the main las2peer agent is equal to the email of the moodle user who created the token.
+	 * Checks whether the main las2peer agent is the owner of the moodle token, i.e.
+	 * whether the email of the main las2peer agent is equal to the email of the
+	 * moodle user who created the token.
+	 * 
 	 * @return Whether the main las2peer agent is the owner of the moodle token.
 	 */
 	private boolean isMainAgentMoodleTokenOwner() {
@@ -688,7 +684,8 @@ public class MoodleDataProxyService extends RESTService {
 	}
 
 	/**
-	 * Sends a monitoring message to the monitoring agent that logs the identifier of the caller of a method.
+	 * Sends a monitoring message to the monitoring agent that logs the identifier
+	 * of the caller of a method.
 	 *
 	 * @param method REST path of the Method called
 	 */
@@ -717,7 +714,7 @@ public class MoodleDataProxyService extends RESTService {
 				JSONArray updates = moodle.local_t4c_get_recent_course_activities(courseid,
 						now - MOODLE_LAST_UPDATE_BUFFER_TIME);
 				if (!updates.isEmpty()) {
-					JSONObject updateObj = (JSONObject) updates.get(updates.length()-1);
+					JSONObject updateObj = (JSONObject) updates.get(updates.length() - 1);
 					long lastUpdateOfCourse = Long.parseLong(updateObj.getString("timecreated"));
 					if (lastUpdate < lastUpdateOfCourse) {
 						lastUpdate = lastUpdateOfCourse;
