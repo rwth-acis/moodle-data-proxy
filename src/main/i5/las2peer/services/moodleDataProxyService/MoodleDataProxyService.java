@@ -583,7 +583,7 @@ public class MoodleDataProxyService extends RESTService {
 						// If consent for data extraction is given create log entry with included data
 						context.invokeInternally(
 								"i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1",
-								"createLogEntry", message);
+								"createLogEntry", statementJSON.toString());
 					}
 					System.out.println("fallalalallslsllele");
 
