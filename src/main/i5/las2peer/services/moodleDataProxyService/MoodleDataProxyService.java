@@ -469,11 +469,11 @@ public class MoodleDataProxyService extends RESTService {
 	private class DataStreamThread implements Runnable {
 		@Override
 		public void run() {
-//			TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-//
-//			// Get current time
-//			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-//			long now = timestamp.toInstant().getEpochSecond();
+			// TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+			//
+			// // Get current time
+			// Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			// long now = timestamp.toInstant().getEpochSecond();
 			long lastTimestamp = 0;
 
 			for (int courseID : courses) {
@@ -488,10 +488,10 @@ public class MoodleDataProxyService extends RESTService {
 						if (lastTimestamp <= updateTimestamp) {
 							lastTimestamp = updateTimestamp + 1;
 						}
-						System.out.println("check use constnt to sasjdasndhsajbdsahbjdhs")
+						System.out.println("check use constnt to sasjdasndhsajbdsahbjdhs");
 
 						if (!checkUserConsent(update)) {
-							System.out.println("check use constnt to decefre")
+							System.out.println("check use constnt to decefre");
 							// Skip this update if acting user did not consent to data extraction.
 							numberOfUpdates--;
 							continue;
