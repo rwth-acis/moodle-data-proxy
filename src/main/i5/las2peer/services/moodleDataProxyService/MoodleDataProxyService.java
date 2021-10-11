@@ -382,7 +382,7 @@ public class MoodleDataProxyService extends RESTService {
 					for (String update : updates) {
 						System.out.println("check use constnt to sasjdasndhsajbdsahbjdhs")
 						if (!checkUserConsent(update)) {
-							System.out.println("check use constnt to decefre")
+							System.out.println("check use constnt to decefre");
 							// Skip this update if acting user did not consent to data extraction.
 							continue;
 						}
