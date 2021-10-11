@@ -380,7 +380,7 @@ public class MoodleDataProxyService extends RESTService {
 					logger.info("Getting updates since " + lastChecked);
 					ArrayList<String> updates = statements.courseUpdatesSince(courseID, lastChecked);
 					for (String update : updates) {
-						System.out.println("check use constnt to sasjdasndhsajbdsahbjdhs")
+						System.out.println("check use constnt to sasjdasndhsajbdsahbjdhs");
 						if (!checkUserConsent(update)) {
 							System.out.println("check use constnt to decefre");
 							// Skip this update if acting user did not consent to data extraction.
