@@ -34,7 +34,7 @@ The test is deactivated by default to enable the automatic built, but it is gene
 Execute the following command on your shell:
 
 ```shell
-ant
+./gradlew build
 ```
 
 Start
