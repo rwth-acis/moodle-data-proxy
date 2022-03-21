@@ -147,7 +147,6 @@ public class MoodleDataProxyService extends RESTService {
 			e.printStackTrace();
 		}
 
-		operators.clear();
 		if (operatorList != null && operatorList.length() > 0) {
 			try {
 				logger.info("Reading operators from provided list.");
@@ -156,7 +155,6 @@ public class MoodleDataProxyService extends RESTService {
 					operators.add(op.trim());
 				}
 				logger.info("Enabled operators: " + courses);
-				return;
 			} catch (Exception e) {
 				logger.severe("Reading operators failed");
 				e.printStackTrace();
