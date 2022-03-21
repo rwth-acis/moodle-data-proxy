@@ -70,6 +70,9 @@ import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleStatementGen
 @ServicePath("moodle")
 public class MoodleDataProxyService extends RESTService {
 
+	private String operatorList;
+	private static HashSet<String> operators = new HashSet<String>();
+
 	private String moodleDomain;
 	private String moodleToken;
 	private String courseList;
@@ -129,6 +132,10 @@ public class MoodleDataProxyService extends RESTService {
 			L2pLogger.setGlobalConsoleLevel(Level.INFO);
 		}
 
+		if (!moodleDomain.endsWith("/")) {
+			moodleDomain = moodleDomain + "/";
+		}
+
 		moodle = new MoodleWebServiceConnection(moodleToken, moodleDomain);
 		statements = new MoodleStatementGenerator(moodle);
 
@@ -138,6 +145,22 @@ public class MoodleDataProxyService extends RESTService {
 		} catch (IOException e) {
 			logger.severe("Unable to call core_webservice_get_site_info Moodle function.");
 			e.printStackTrace();
+		}
+
+		operators.clear();
+		if (operatorList != null && operatorList.length() > 0) {
+			try {
+				logger.info("Reading operators from provided list.");
+				String[] opStrings = operatorList.split(",");
+				for (String op : opStrings) {
+					operators.add(op.trim());
+				}
+				logger.info("Enabled operators: " + courses);
+				return;
+			} catch (Exception e) {
+				logger.severe("Reading operators failed");
+				e.printStackTrace();
+			}
 		}
 
 		if (email.equals("")) {
@@ -308,7 +331,7 @@ public class MoodleDataProxyService extends RESTService {
 			logger.warning("Proxy service uses blockchain verification and consent checks");
 		}
 
-		if (!isMainAgentMoodleTokenOwner()) {
+		if (!(isMainAgentMoodleTokenOwner() || isOperator())) {
 			return Response.status(Status.FORBIDDEN).entity("Access denied").build();
 		}
 
@@ -367,7 +390,7 @@ public class MoodleDataProxyService extends RESTService {
 			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
 		}
 
-		if (!proxyservice.isMainAgentMoodleTokenOwner()) {
+		if (!(proxyservice.isMainAgentMoodleTokenOwner() || proxyservice.isOperator())) {
 			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
 		}
 
@@ -401,7 +424,7 @@ public class MoodleDataProxyService extends RESTService {
 			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
 		}
 
-		if (!proxyservice.isMainAgentMoodleTokenOwner()) {
+		if (!(proxyservice.isMainAgentMoodleTokenOwner() || proxyservice.isOperator())) {
 			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
 		}
 
@@ -439,7 +462,7 @@ public class MoodleDataProxyService extends RESTService {
 			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
 		}
 
-		if (!proxyservice.isMainAgentMoodleTokenOwner()) {
+		if (!(proxyservice.isMainAgentMoodleTokenOwner() || proxyservice.isOperator())) {
 			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
 		}
 
@@ -473,7 +496,7 @@ public class MoodleDataProxyService extends RESTService {
 			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
 		}
 
-		if (!proxyservice.isMainAgentMoodleTokenOwner()) {
+		if (!(proxyservice.isMainAgentMoodleTokenOwner() || proxyservice.isOperator())) {
 			return Response.status(Status.FORBIDDEN).entity("Access denied.").build();
 		}
 
@@ -675,7 +698,20 @@ public class MoodleDataProxyService extends RESTService {
 		}
 
 	}
-	
+
+
+	/**
+	 * Checks whether the main las2peer agent is in the list of authorized operators who are able to start or change
+	 * settings of the proxy, e.g., set or disable the whitelist.
+	 * @return Whether the main las2peer agent is an authorized operator.
+	 */
+	private boolean isOperator(){
+		UserAgentImpl u = (UserAgentImpl) Context.getCurrent().getMainAgent();
+		String uEmail = u.getEmail();
+		return operators.contains(uEmail);
+	}
+
+
 	/**
 	 * Checks whether the main las2peer agent is the owner of the moodle token, i.e. whether the 
 	 * email of the main las2peer agent is equal to the email of the moodle user who created the token.
