@@ -154,7 +154,7 @@ public class MoodleDataProxyService extends RESTService {
 				for (String op : opStrings) {
 					operators.add(op.trim());
 				}
-				logger.info("Enabled operators: " + courses);
+				logger.info("Enabled operators: " + operators);
 			} catch (Exception e) {
 				logger.severe("Reading operators failed");
 				e.printStackTrace();
