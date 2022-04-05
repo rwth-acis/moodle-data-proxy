@@ -131,7 +131,7 @@ public class MoodleDataProxyService extends RESTService {
 			lastChecked = getLastUpdateTime();
 			L2pLogger.setGlobalConsoleLevel(Level.INFO);
 		}
-
+		// Ensure consistent form of URL in statements
 		if (!moodleDomain.endsWith("/")) {
 			moodleDomain = moodleDomain + "/";
 		}
@@ -697,7 +697,6 @@ public class MoodleDataProxyService extends RESTService {
 
 	}
 
-
 	/**
 	 * Checks whether the main las2peer agent is in the list of authorized operators who are able to start or change
 	 * settings of the proxy, e.g., set or disable the whitelist.
@@ -708,7 +707,6 @@ public class MoodleDataProxyService extends RESTService {
 		String uEmail = u.getEmail();
 		return operators.contains(uEmail);
 	}
-
 
 	/**
 	 * Checks whether the main las2peer agent is the owner of the moodle token, i.e. whether the 
