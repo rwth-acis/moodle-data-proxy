@@ -27,6 +27,7 @@ function set_in_service_config {
 set_in_service_config moodleDomain ${MOODLE_DOMAIN}
 set_in_service_config moodleToken ${MOODLE_TOKEN}
 set_in_service_config courseList ${COURSE_LIST}
+set_in_service_config operatorList ${OPERATOR_LIST}
 
 # wait for any bootstrap host to be available
 if [[ ! -z "${BOOTSTRAP}" ]]; then
