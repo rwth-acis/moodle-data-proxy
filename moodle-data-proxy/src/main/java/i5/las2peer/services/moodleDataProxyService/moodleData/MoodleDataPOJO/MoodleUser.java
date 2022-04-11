@@ -75,11 +75,11 @@ public class MoodleUser extends MoodleDataPOJO {
 		return this.moodleToken;
 	}
 
-	public int getID() {
+	public int getId() {
 		return id;
 	}
 
-	public void setID(int id) {
+	public void setId(int id) {
 		this.id = id;
 	}
 
@@ -145,8 +145,8 @@ public class MoodleUser extends MoodleDataPOJO {
 			}
 			this.courseRoles.put(courseID, tmp);
 		} catch (Exception e) {
-			logger.severe("Error while parsing user role in MoodleUser: "
-				+ e.getStackTrace());
+			logger.severe("Error while parsing user role for MoodleUser: "
+				+ email + "\n" + e.getStackTrace());
 		}
 	}
 
