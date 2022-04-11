@@ -367,11 +367,19 @@ public class MoodleStatementGenerator {
 		MoodleUser user = userMap.get(userID);
 		List<Integer> roleList = user.getCourseRoles(courseID);
 		JSONArray rolesJSON = new JSONArray();
-		for (int roleID : roleList) {
+		if (roleList == null) {
+			logger.warning("User has no role in course "  + courseID);
 			JSONObject roleJSON = new JSONObject();
-			roleJSON.put("roleid", roleID);
-			roleJSON.put("rolename", MoodleUser.getRoleName(roleID));
+			roleJSON.put("roleid", "");
+			roleJSON.put("rolename", "");
 			rolesJSON.put(roleJSON);
+		} else {
+			for (int roleID : roleList) {
+				JSONObject roleJSON = new JSONObject();
+				roleJSON.put("roleid", roleID);
+				roleJSON.put("rolename", MoodleUser.getRoleName(roleID));
+				rolesJSON.put(roleJSON);
+			}
 		}
 		// prepare course info
 		JSONObject courseInfoJSON = new JSONObject();
