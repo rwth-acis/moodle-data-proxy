@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -38,6 +39,13 @@ import org.json.JSONObject;
 
 import i5.las2peer.api.Context;
 import i5.las2peer.api.ManualDeployment;
+import i5.las2peer.api.execution.InternalServiceException;
+import i5.las2peer.api.execution.ServiceAccessDeniedException;
+import i5.las2peer.api.execution.ServiceInvocationFailedException;
+import i5.las2peer.api.execution.ServiceMethodNotFoundException;
+import i5.las2peer.api.execution.ServiceNotAuthorizedException;
+import i5.las2peer.api.execution.ServiceNotAvailableException;
+import i5.las2peer.api.execution.ServiceNotFoundException;
 import i5.las2peer.api.logging.MonitoringEvent;
 import i5.las2peer.logging.L2pLogger;
 import java.util.logging.Level;
@@ -347,6 +355,25 @@ public class MoodleDataProxyService extends RESTService {
 		} else {
 			return Response.status(Status.BAD_REQUEST).entity("Thread already running.").build();
 		}
+	}
+	
+	@GET
+	@Path("/test")
+	@Produces(MediaType.TEXT_PLAIN)
+	public Response testRMI() {
+		String retVal = null;
+		logger.info("Got here");
+		try {
+			retVal = (String) context.invokeInternally("i5.las2peer.services.privacy_control_service.PrivacyControlService@0.1.0", "testRMI", "hello");
+		} catch (ServiceNotFoundException | ServiceNotAvailableException | InternalServiceException
+				| ServiceMethodNotFoundException | ServiceInvocationFailedException | ServiceAccessDeniedException
+				| ServiceNotAuthorizedException e) {
+			// TODO Auto-generated catch block
+			logger.info("fcl");
+			e.printStackTrace();
+			return Response.serverError().build();
+		}
+		return Response.ok(retVal).build();
 	}
 
 	@Api(
