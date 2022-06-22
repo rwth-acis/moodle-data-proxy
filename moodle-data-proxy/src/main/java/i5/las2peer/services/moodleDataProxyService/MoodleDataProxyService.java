@@ -707,7 +707,7 @@ public class MoodleDataProxyService extends RESTService {
 			try {
 				userEmail = statementJSON.getJSONObject("actor").getJSONObject("account").getString("name");
 			} catch (JSONException e) {
-				logger.severe("Error while retrieven actor details from statement: " + statementJSON.toString());
+				logger.severe("Error while retrieving actor details from statement: " + statementJSON.toString());
 				return null;
 			}
 			
@@ -771,6 +771,7 @@ public class MoodleDataProxyService extends RESTService {
 			
 			// Response is null if user is not enrolled in course or another other error has occurred
 			if (response == null) {
+				logger.info("DataProcessingRequestResponce returned null.");
 				return null;
 			}
 			
