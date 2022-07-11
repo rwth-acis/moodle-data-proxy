@@ -88,7 +88,8 @@ public class MoodleDataProxyService extends RESTService {
 	private static Context context = null;
 
 	private final static int MOODLE_DATA_STREAM_PERIOD = 60; // Every minute
-	private final static int MOODLE_USER_INFO_UPDATE_PERIOD = 3600; // Every hour
+	// private final static int MOODLE_USER_INFO_UPDATE_PERIOD = 3600; // Every hour
+	private final static int MOODLE_USER_INFO_UPDATE_PERIOD = 60; // Every minute, temporary (?) change
 	private final static int MOODLE_LAST_UPDATE_BUFFER_TIME = 3600; // Maximum
 	private static long lastChecked = 0;
 	private static String email = "";
