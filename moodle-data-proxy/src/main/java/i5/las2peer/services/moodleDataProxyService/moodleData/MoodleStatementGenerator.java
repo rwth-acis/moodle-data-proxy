@@ -240,6 +240,10 @@ public class MoodleStatementGenerator {
 			JSONObject event = (JSONObject) eventObject;
 			int userID = event.getInt("userid");
 			MoodleUser actor = getUser(userID, courseID);
+			if (actor == null) {
+				logger.warning("Could not find actor with userID " + userID + " of the following event:\n" + event);
+				continue;
+			}
 			MoodleDataPOJO object = getModule(event.getInt("contextinstanceid"));
 
 			// if target is not a module, log the target name and id

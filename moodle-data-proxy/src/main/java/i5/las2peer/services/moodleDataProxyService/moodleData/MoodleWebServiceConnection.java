@@ -14,6 +14,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 
+import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleDataPOJO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -22,6 +24,8 @@ public class MoodleWebServiceConnection {
 	private static String token = null;
 	private static String domainName = null;
 	private static String restFormat = "&moodlewsrestformat=json";
+
+	private final static L2pLogger logger = L2pLogger.getInstance(MoodleDataPOJO.class.getName());
 
 	/**
 	 * @param token access token for the moodle instance
@@ -116,7 +120,10 @@ public class MoodleWebServiceConnection {
 		String urlParameters = "field=" + URLEncoder.encode(field, "UTF-8");
 		urlParameters += "&values[0]=" + URLEncoder.encode(Integer.toString(value), "UTF-8");
 		JSONArray userJSON = new JSONArray(restRequest("core_user_get_users_by_field", urlParameters));
-		return userJSON.getJSONObject(0);
+		if (!userJSON.isEmpty()) {
+			return userJSON.getJSONObject(0);
+		}
+		return null;
 	}
 
 	/**
@@ -140,7 +147,12 @@ public class MoodleWebServiceConnection {
 		String urlParameters = "courseid=" + URLEncoder.encode(Integer.toString(courseId), "UTF-8");
 		urlParameters += "&since=" + URLEncoder.encode(Long.toString(since), "UTF-8");
 		JSONObject updateJSON = new JSONObject(restRequest("core_course_get_updates_since", urlParameters));
-		return updateJSON.getJSONArray("instances");
+		if (updateJSON.has("instances")) {
+			return updateJSON.getJSONArray("instances");
+		}
+		// Error occurred. Can be triggered by invalid token because user of token is not in course
+		logger.warning("Could not fetch updates for course " + courseId + "\n" + updateJSON);
+		return new JSONArray();
 	}
 
 
