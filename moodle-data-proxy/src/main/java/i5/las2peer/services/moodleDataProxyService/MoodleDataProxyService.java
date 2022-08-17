@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -34,10 +35,18 @@ import i5.las2peer.services.moodleDataProxyService.util.StoreManagementParseExce
 import io.swagger.annotations.*;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import i5.las2peer.api.Context;
 import i5.las2peer.api.ManualDeployment;
+import i5.las2peer.api.execution.InternalServiceException;
+import i5.las2peer.api.execution.ServiceAccessDeniedException;
+import i5.las2peer.api.execution.ServiceInvocationFailedException;
+import i5.las2peer.api.execution.ServiceMethodNotFoundException;
+import i5.las2peer.api.execution.ServiceNotAuthorizedException;
+import i5.las2peer.api.execution.ServiceNotAvailableException;
+import i5.las2peer.api.execution.ServiceNotFoundException;
 import i5.las2peer.api.logging.MonitoringEvent;
 import i5.las2peer.logging.L2pLogger;
 import java.util.logging.Level;
@@ -46,6 +55,8 @@ import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.security.UserAgentImpl;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleWebServiceConnection;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleDataPOJO.MoodleUser;
+import i5.las2peer.services.moodleDataProxyService.privacy_control_service_rmi.DataProcessingRequestResponse;
+import i5.las2peer.services.moodleDataProxyService.privacy_control_service_rmi.StatementConsentHandler;
 import i5.las2peer.services.moodleDataProxyService.util.UserWhitelistHelper;
 import i5.las2peer.services.moodleDataProxyService.util.WhitelistParseException;
 import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleStatementGenerator;
@@ -76,7 +87,7 @@ public class MoodleDataProxyService extends RESTService {
 	private String moodleDomain;
 	private String moodleToken;
 	private String courseList;
-	private boolean usesBlockchainVerification;
+	private boolean usesPrivacyControl;
 
 	private static HashSet<Integer> courses = new HashSet<Integer>();
 	private static ScheduledExecutorService dataStreamThread = null;
@@ -175,10 +186,6 @@ public class MoodleDataProxyService extends RESTService {
 
 		moodleFunctionSurvey(webserviceInfoResponse);
 
-		// Change variable to false in orded to check proxy functionality independent
-		// from the verification service.
-		usesBlockchainVerification = false;
-		
 		// check if whitelist file exists and enable whitelist in that case
 		userWhitelistEnabled = UserWhitelistHelper.isWhitelistEnabled();
 		if(userWhitelistEnabled) {
@@ -311,6 +318,11 @@ public class MoodleDataProxyService extends RESTService {
 	public static boolean isMoodleFunctionEnabled(String functionName) {
 		return enabledMoodleFunctions.contains(functionName);
 	}
+	
+	/////////////////////////////////////////////////////////////////////////////////
+	///                             Initialisation                                ///
+	/////////////////////////////////////////////////////////////////////////////////
+	
 
 	@POST
 	@Path("/")
@@ -323,11 +335,6 @@ public class MoodleDataProxyService extends RESTService {
 	public Response initMoodleProxy() {
 		if (Context.getCurrent().getMainAgent() instanceof AnonymousAgent) {
 			return Response.status(Status.UNAUTHORIZED).entity("Authorization required.").build();
-		}
-
-		// TODO: If flag is set, make sure the privacy control service is up and running before initiating.
-		if (usesBlockchainVerification) {
-			logger.warning("Proxy service uses blockchain verification and consent checks");
 		}
 
 		if (!(isMainAgentMoodleTokenOwner() || isOperator())) {
@@ -349,7 +356,12 @@ public class MoodleDataProxyService extends RESTService {
 			return Response.status(Status.BAD_REQUEST).entity("Thread already running.").build();
 		}
 	}
-
+	
+		
+	/////////////////////////////////////////////////////////////////////////////////
+	///                             Configuration                                 ///
+	/////////////////////////////////////////////////////////////////////////////////
+	
 	@Api(
 			value = "Proxy Configuration")
 	@SwaggerDefinition(
@@ -510,6 +522,10 @@ public class MoodleDataProxyService extends RESTService {
 			}
 		}
 	}
+	
+	/////////////////////////////////////////////////////////////////////////////////
+	///                                 Threads                                   ///
+	/////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -542,14 +558,65 @@ public class MoodleDataProxyService extends RESTService {
 						if (lastTimestamp <= updateTimestamp) {
 							lastTimestamp = updateTimestamp + 1;
 						}
-
-						if (!checkUserConsent(update)) {
+						
+						logger.info("Message is: " + update);
+						
+						if (!usesPrivacyControl) {
+							context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
+							continue;
+						}
+						
+						// Interaction with Privacy Control Service
+						
+						JSONObject messageObject = null;
+						JSONObject statementJSON = null;
+						try {
+							messageObject = new JSONObject(update);
+							statementJSON = (JSONObject) messageObject.get("statement");
+						} catch (JSONException e) {
+							logger.severe("Error parsing message to JSON: " + update);
+							continue;
+						}
+						
+						// Check if user has given consent to this statement's purpose
+						JSONObject result = checkUserConsent(statementJSON, String.valueOf(courseID));
+						if (result == null) {
 							// Skip this update if acting user did not consent to data extraction.
 							numberOfUpdates--;
 							continue;
 						}
-
-						context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
+						
+						String pseudonym = result.getString("pseudonym");
+						int purposeCode = result.getInt("purpose");						
+						
+						// If consent has been given, replace user info with received pseudonym before forwarding
+						statementJSON = StatementConsentHandler.replaceUserInfoWithPseudonym(statementJSON, pseudonym);
+						messageObject.put("statement", statementJSON);
+						logger.info("Final statement is: " + statementJSON.toString());
+						
+						messageObject.put("purpose", purposeCode);
+						messageObject.put("course", String.valueOf(courseID));
+												
+						update = messageObject.toString();
+						
+						boolean forwardStatementResult = false;
+						try {
+							logger.info("Attempting to contact Privacy Control Service for Forward Statement.");
+							forwardStatementResult = (boolean) context.invokeInternally(
+														"i5.las2peer.services.privacy_control_service.PrivacyControlService@0.1.0",
+														"forwardStatement",
+														update);
+						} catch (ServiceNotFoundException | ServiceNotAvailableException | InternalServiceException
+								| ServiceMethodNotFoundException | ServiceInvocationFailedException | ServiceAccessDeniedException
+								| ServiceNotAuthorizedException e) {
+							logger.severe("Error while contacting Privacy Control Service to Forward Statement.");
+						}
+						
+						if (!forwardStatementResult) {
+							logger.severe("Did not pass message correctly through PCS Forward Statement: " + update);
+						} else {
+							logger.info("Statement forwarded successfully!");
+						}
 					}
 					logger.info("Sent " + numberOfUpdates + " messages for course " + courseID);
 				} catch (Exception e) {
@@ -594,51 +661,104 @@ public class MoodleDataProxyService extends RESTService {
 			return 0;
 		}
 
-		private boolean checkUserConsent(String message) {
-			JSONObject statementJSON = null;
+		/**
+		 * This method checks whether a user has given consent to the data contained
+		 * in this statement being processed. It does this by making a RMI to the 
+		 * Privacy Control Service. If the statement's processing purpose, which is 
+		 * based on its verb, is among the purposes specified in the RMI response,
+		 * it is considered that consent has been given, otherwise not.
+		 * 
+		 * @param statementJSON The statement JSON Object.
+		 * @param courseID The ID of the course.
+		 * @return A JSON object containing the user's pseudonym and the purpose code
+		 * of the statement, if consent was given, otherwise null.
+		 */
+		private JSONObject checkUserConsent(JSONObject statementJSON, String courseID) {
+			String userEmail = null;
 			try {
-				JSONObject msgObj = new JSONObject(message);
-				statementJSON = (JSONObject) msgObj.get("statement");
-			} catch (Exception e) {
-				logger.severe("Error parsing message to JSON: " + message);
-				return false;
+				userEmail = statementJSON.getJSONObject("actor").getJSONObject("account").getString("name");
+			} catch (JSONException e) {
+				logger.severe("Error while retrieving actor details from statement: " + statementJSON.toString());
+				return null;
 			}
 			
-			if (statementJSON.isNull("actor")) {
-				logger.warning("Message does not seem to contain personal data.");
-				return true;
+			DataProcessingRequestResponse pcsResponse = getUserConsentInfo(userEmail, courseID);
+			if (pcsResponse == null) {
+				// In this case the user is not registered in the course, or similar error
+				return null;
 			}
 			
-			String userEmail = statementJSON.getJSONObject("actor").getJSONObject("account").getString("name");
+			Set<Integer> purposeCodes = pcsResponse.getPurposeCodes();
+			String printout = "[";
+			for (int code : purposeCodes) {
+				printout += code + ",";
+			}
+			printout += "]";
+			logger.info("Received codes: " + printout);
 			
-			if(usesBlockchainVerification) {
-				String verb = statementJSON.getJSONObject("verb").getJSONObject("display").getString("en-US");
-				
-				logger.warning("Checking consent for email: " + userEmail + " and action: " + verb + " ...");
-				boolean consentGiven = false;
-				try {
-					consentGiven = (boolean) context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1", "checkUserConsent", userEmail, verb);
-					if (consentGiven) {
-						// If consent for data extraction is given create log entry with included data
-						context.invokeInternally("i5.las2peer.services.learningAnalyticsVerification.LearningAnalyticsVerificationService@1.0.1", "createLogEntry", message);
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-					return false;
-				}
-				logger.warning("Consent given: " + consentGiven);
-				return consentGiven;
+			// Determine which code the statement
+			int statementPurpose = StatementConsentHandler.getStatementPurposeCode(statementJSON);
+			logger.info("Statement purpose code is: " + statementPurpose);
+						
+			// See if user has given consent for that code
+			if (!purposeCodes.contains(statementPurpose)) {
+				return null;
 			}
 			
 			if(userWhitelistEnabled) {
 				if (!userWhitelist.contains(userEmail)) {
 					logger.warning("Message not sent because user is not in the whitelist.");
-					return false;
+					return null;
 				}
 			}
-			return true;
+			
+			String pseudonym = pcsResponse.getPseudonym();
+			logger.info("User pseudonym is: " + pseudonym);
+			
+			JSONObject retVal =  new JSONObject();
+			retVal.put("pseudonym", pseudonym);
+			retVal.put("purpose", statementPurpose);
+			return retVal;
+		}
+		
+		private DataProcessingRequestResponse getUserConsentInfo(String userID, String courseID) {
+			String response = null;
+			try {
+				logger.info("Attempting to contact Privacy Control Service for Data Processing Request"
+						+ " through RMI.");
+				response = (String) context
+						.invokeInternally("i5.las2peer.services.privacy_control_service.PrivacyControlService@0.1.0",
+										  "dataProcessingRequest",
+										  userID,
+										  courseID);
+			} catch (ServiceNotFoundException | ServiceNotAvailableException | InternalServiceException
+					| ServiceMethodNotFoundException | ServiceInvocationFailedException | ServiceAccessDeniedException
+					| ServiceNotAuthorizedException e) {
+				logger.severe("Error while contacting Privacy Control Service through RMI for: "
+						+ "user:" + userID + " "
+						+ "course:" + courseID);
+				return null;
+			}
+			
+			// Response is null if user is not enrolled in course or another other error has occurred
+			if (response == null) {
+				logger.info("DataProcessingRequestResponce returned null.");
+				return null;
+			}
+			
+			DataProcessingRequestResponse dprr = null;
+			try {
+				dprr = new DataProcessingRequestResponse(response);
+			} catch (JSONException e) {
+				logger.severe("Error while parsing Data Processing Request Response. "
+						+ "Raw response was: " + response);
+			}
+			
+			return dprr;
 		}
 	}
+	
+	
 
 	/**
 	 * Thread which periodically updates cached user info.
@@ -697,6 +817,11 @@ public class MoodleDataProxyService extends RESTService {
 		}
 
 	}
+	
+	/////////////////////////////////////////////////////////////////////////////////
+	///                            Helper functions                               ///
+	/////////////////////////////////////////////////////////////////////////////////
+	
 
 	/**
 	 * Checks whether the main las2peer agent is in the list of authorized operators who are able to start or change
