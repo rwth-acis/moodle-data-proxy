@@ -65,7 +65,7 @@ import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleStatementGen
 @SwaggerDefinition(
 		info = @Info(
 				title = "Moodle Data Proxy Service",
-				version = "1.3.0",
+				version = "1.5.0",
 				description = "A proxy for requesting data from moodle",
 				contact = @Contact(
 						name = "Boris Jovanovic",
@@ -367,7 +367,7 @@ public class MoodleDataProxyService extends RESTService {
 	@SwaggerDefinition(
 			info = @Info(
 					title = "Moodle Data-Proxy",
-					version = "1.3.0",
+					version = "1.5.0",
 					description = "A las2peer service for generating xAPI statements from Moodle updates.",
 					termsOfService = "",
 					contact = @Contact(
