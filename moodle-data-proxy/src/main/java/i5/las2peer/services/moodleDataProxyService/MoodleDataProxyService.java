@@ -3,7 +3,6 @@ package i5.las2peer.services.moodleDataProxyService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -25,11 +24,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -43,7 +37,6 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import i5.las2peer.api.Context;
 import i5.las2peer.api.ManualDeployment;
@@ -94,6 +87,7 @@ public class MoodleDataProxyService extends RESTService {
 	private String moodleDomain;
 	private String moodleToken;
 	private String courseList;
+	private boolean usesPrivacyControl;
 
 	private static HashSet<Integer> courses = new HashSet<Integer>();
 	private static ScheduledExecutorService dataStreamThread = null;
@@ -362,30 +356,6 @@ public class MoodleDataProxyService extends RESTService {
 		}
 	}
 	
-	/////////////////////////////////////////////////////////////////////////////////
-	///                                 PCS RMI                                   ///
-	/////////////////////////////////////////////////////////////////////////////////
-	
-	@GET
-	@Path("/test")
-	@Produces(MediaType.TEXT_PLAIN)
-	public Response testRMI() {
-		String retVal = null;
-		logger.info("Got here");
-		try {
-			retVal = (String) Context.get().invokeInternally("i5.las2peer.services.privacy_control_service.PrivacyControlService@0.1.0", "dataProcessingRequest", "jovanovic.boris@rwth-aachen.de", "12");
-		} catch (ServiceNotFoundException | ServiceNotAvailableException | InternalServiceException
-				| ServiceMethodNotFoundException | ServiceInvocationFailedException | ServiceAccessDeniedException
-				| ServiceNotAuthorizedException e) {
-			// TODO Auto-generated catch block
-			logger.info("fcl");
-			e.printStackTrace();
-			return Response.serverError().build();
-		}
-		return Response.ok(retVal).build();
-	}
-	
-	
 		
 	/////////////////////////////////////////////////////////////////////////////////
 	///                             Configuration                                 ///
@@ -565,10 +535,6 @@ public class MoodleDataProxyService extends RESTService {
 	 * @return void
 	 *
 	 */
-	/**
-	 * @author Boris
-	 *
-	 */
 	private class DataStreamThread implements Runnable {
 		@Override
 		public void run() {
@@ -593,6 +559,13 @@ public class MoodleDataProxyService extends RESTService {
 						}
 						
 						logger.info("Message is: " + update);
+						
+						if (!usesPrivacyControl) {
+							context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
+							continue;
+						}
+						
+						// Interaction with Privacy Control Service
 						
 						JSONObject messageObject = null;
 						JSONObject statementJSON = null;
@@ -643,9 +616,6 @@ public class MoodleDataProxyService extends RESTService {
 						} else {
 							logger.info("Statement forwarded successfully!");
 						}
-
-						//OLD: context.monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, update);
-						
 					}
 					logger.info("Sent " + numberOfUpdates + " messages for course " + courseID);
 				} catch (Exception e) {

@@ -3,7 +3,18 @@ package i5.las2peer.services.moodleDataProxyService.privacy_control_service_rmi;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+
+/**
+ * Helper class to deal with already created xAPI Statements.
+ * Helps with classifying data according to the Privacy Control Service's
+ * Data Processing Purposes.
+ */
 public class StatementConsentHandler {
+	
+	/**
+	 * This enum holds the id's of the Data Processing Purposes, as defined in the
+	 * Privacy Control Service. It is used to label statements.
+	 */
 	public static enum PurposeCode {
 		FORUM_DATA(1),
 		VIEWING_DATA(2),
@@ -16,6 +27,15 @@ public class StatementConsentHandler {
 		}
 	}
 	
+	
+	/**
+	 * This method decides what Purpose an xAPI Statement should be classified with.
+	 * Current implementation is based on the Verb of the Statement.
+	 * 
+	 * @param statement The xAPI Statement in question.
+	 * @return The PurposeCode of the Purpose the statement belongs to, 0 if unknown.
+	 * @throws JSONException If the Statement cannot be parsed according to specification.
+	 */
 	public static int getStatementPurposeCode(JSONObject statement) throws JSONException {
 		JSONObject verbJSON = statement.getJSONObject("verb");
 		JSONObject displayJSON = verbJSON .getJSONObject("display");

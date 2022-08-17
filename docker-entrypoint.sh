@@ -28,6 +28,7 @@ set_in_service_config moodleDomain ${MOODLE_DOMAIN}
 set_in_service_config moodleToken ${MOODLE_TOKEN}
 set_in_service_config courseList ${COURSE_LIST}
 set_in_service_config operatorList ${OPERATOR_LIST}
+set_in_service_config usesPrivacyControl ${USES_PRIVACY_CONTROL}
 
 # wait for any bootstrap host to be available
 if [[ ! -z "${BOOTSTRAP}" ]]; then
