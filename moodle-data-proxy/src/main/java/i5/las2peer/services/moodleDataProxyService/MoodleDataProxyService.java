@@ -570,9 +570,11 @@ public class MoodleDataProxyService extends RESTService {
 						
 						JSONObject messageObject = null;
 						JSONObject statementJSON = null;
+						JSONArray tokensJSON = null;
 						try {
 							messageObject = new JSONObject(update);
 							statementJSON = (JSONObject) messageObject.get("statement");
+							tokensJSON = (JSONArray) messageObject.get("tokens");
 						} catch (JSONException e) {
 							logger.severe("Error parsing message to JSON: " + update);
 							continue;
@@ -596,6 +598,7 @@ public class MoodleDataProxyService extends RESTService {
 						
 						messageObject.put("purpose", purposeCode);
 						messageObject.put("course", String.valueOf(courseID));
+						messageObject.put("tokens", tokensJSON);
 												
 						update = messageObject.toString();
 						
