@@ -1,11 +1,10 @@
 /output/
-/export/
+/moodle-data-proxy/export/
 /node-storage/
 /.las2peer/
 /tmp/
 /log/
 /lib/
-/etc/ivy/ivy.jar
 /service/
 /out/
 /.idea/
@@ -18,3 +17,9 @@
 *.secret
 archiva_credentials.xml
 /whitelist
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build

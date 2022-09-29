@@ -23,6 +23,7 @@ To set up the service configure the [property](etc/i5.las2peer.services.moodleDa
 moodleDomain = http://exampleDomain
 moodleToken = exampleToken
 courseList = 1,2,3
+operatorList = example@mail.com,beautiful@address.com
 ```
 Note, that if no courseList is provided, activities will be logged for all courses accessible via the provided moodleToken.
 
@@ -34,7 +35,7 @@ The test is deactivated by default to enable the automatic built, but it is gene
 Execute the following command on your shell:
 
 ```shell
-ant
+./gradlew build
 ```
 
 Start
@@ -47,7 +48,7 @@ Sending Moodle data to MobSOS
 
 The sending of Moodle data to MobSOS is performed by a thread which is executed once every minute to retrieve new activities.
 The thread has to be started using a POST request after the node was successfully started and connected to the las2peer network.
-The POST request has to be sent by a registered las2peer user with the same email address as the one registered to the provided moodleToken.
+The POST request has to be sent by a registered las2peer user. The email address of the las2peer user has to be registered in the `operatorList` property or have to be the same email address as the one registered to the provided moodleToken. 
 How to send the POST request as a registered las2peer user is described [here](https://github.com/rwth-acis/las2peer/tree/master/webconnector#using-oidc-with-las2peer).
 Send the request to the following path using the necessary authorization:
 ```
@@ -108,10 +109,10 @@ docker build . -t moodle-data-proxy
 Then you can run the image like this:
 
 ```bash
-docker run -e MOODLE_DOMAIN="moodleDomain" -e MOODLE_TOKEN="moodleToken" -e COURSE_LIST="1,2,3" -p port:9011 moodle-data-proxy
+docker run -e MOODLE_DOMAIN="moodleDomain" -e MOODLE_TOKEN="moodleToken" -e COURSE_LIST="1,2,3" -e OPERATOR_LIST="example@mail.com,beautiful@address.com" -p port:9011 moodle-data-proxy
 ```
 
-Replace *moodleDomain* with the domain of your Moodle instance, *moodleToken* with the corresponding Web-service token, *1,2,3* with you actual course list, and *port* with a free port in your network.
+Replace *moodleDomain* with the domain of your Moodle instance, *moodleToken* with the corresponding Web-service token, *1,2,3* with you actual course list, *example@mail.com,beautiful@address.com* with the email addresses of las2peer users that are allowed to use the REST API and *port* with a free port in your network.
 
 ### Node Launcher Variables
 
