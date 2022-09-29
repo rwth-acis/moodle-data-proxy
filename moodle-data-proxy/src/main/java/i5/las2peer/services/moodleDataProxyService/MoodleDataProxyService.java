@@ -65,7 +65,7 @@ import i5.las2peer.services.moodleDataProxyService.moodleData.MoodleStatementGen
 @SwaggerDefinition(
 		info = @Info(
 				title = "Moodle Data Proxy Service",
-				version = "1.3.0",
+				version = "1.5.0",
 				description = "A proxy for requesting data from moodle",
 				contact = @Contact(
 						name = "Boris Jovanovic",
@@ -367,7 +367,7 @@ public class MoodleDataProxyService extends RESTService {
 	@SwaggerDefinition(
 			info = @Info(
 					title = "Moodle Data-Proxy",
-					version = "1.3.0",
+					version = "1.5.0",
 					description = "A las2peer service for generating xAPI statements from Moodle updates.",
 					termsOfService = "",
 					contact = @Contact(
@@ -570,9 +570,11 @@ public class MoodleDataProxyService extends RESTService {
 						
 						JSONObject messageObject = null;
 						JSONObject statementJSON = null;
+						JSONArray tokensJSON = null;
 						try {
 							messageObject = new JSONObject(update);
 							statementJSON = (JSONObject) messageObject.get("statement");
+							tokensJSON = (JSONArray) messageObject.get("tokens");
 						} catch (JSONException e) {
 							logger.severe("Error parsing message to JSON: " + update);
 							continue;
@@ -596,6 +598,7 @@ public class MoodleDataProxyService extends RESTService {
 						
 						messageObject.put("purpose", purposeCode);
 						messageObject.put("course", String.valueOf(courseID));
+						messageObject.put("tokens", tokensJSON);
 												
 						update = messageObject.toString();
 						
